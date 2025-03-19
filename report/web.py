@@ -196,14 +196,21 @@ class GenerateReport:
                         samples_with_bugs: list[dict[str, Any]],
                         coverage_language_gains: dict[str, Any]):
     """Generate the report index.html and write to filesystem."""
+    # Define common data that should be available in base.html
+    common_data = {
+        'model': self._jinja._env.globals['model'],
+        'accumulated_results': accumulated_results,
+        'time_results': time_results,  # Include it here only
+    }
+    
     rendered = self._jinja.render(
         'index.html',
         benchmarks=benchmarks,
-        accumulated_results=accumulated_results,
-        time_results=time_results,
         projects=projects,
         samples_with_bugs=samples_with_bugs,
-        coverage_language_gains=coverage_language_gains)
+        coverage_language_gains=coverage_language_gains,
+        **common_data  # Pass common data to all templates
+    )
     self._write('index.html', rendered)
 
   def _write_index_json(self, benchmarks: List[Benchmark]):
@@ -214,10 +221,18 @@ class GenerateReport:
   def _write_benchmark_index(self, benchmark: Benchmark, samples: List[Sample],
                              prompt: Optional[str]):
     """Generate the benchmark index.html and write to filesystem."""
+    # Pass the same common data here
+    common_data = {
+        'model': self._jinja._env.globals['model'],
+        'accumulated_results': self._results.get_macro_insights([benchmark]),
+        'time_results': self.read_timings()
+    }
+    
     rendered = self._jinja.render('benchmark.html',
-                                  benchmark=benchmark.id,
-                                  samples=samples,
-                                  prompt=prompt)
+                                 benchmark=benchmark.id,
+                                 samples=samples,
+                                 prompt=prompt,
+                                 **common_data)  # Pass common data to all templates
     self._write(f'benchmark/{benchmark.id}/index.html', rendered)
 
   def _write_benchmark_crash(self, benchmark: Benchmark, samples: List[Sample]):
@@ -238,18 +253,26 @@ class GenerateReport:
                               sample_targets: List[Target]):
     """Generate the sample page and write to filesystem."""
     try:
-      rendered = self._jinja.render(
-          'sample.html',
-          benchmark=benchmark.id,
-          sample=sample,
-          logs=self._results.get_logs(benchmark.id, sample.id),
-          run_logs=self._results.get_run_logs(benchmark.id, sample.id),
-          triage=self._results.get_triage(benchmark.id, sample.id),
-          targets=sample_targets)
-      self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
+        # Add common data here too
+        common_data = {
+            'model': self._jinja._env.globals['model'],
+            'time_results': self.read_timings(),
+            'accumulated_results': self._results.get_macro_insights([benchmark])
+        }
+        
+        rendered = self._jinja.render(
+            'sample.html',
+            benchmark=benchmark.id,
+            sample=sample,
+            logs=self._results.get_logs(benchmark.id, sample.id),
+            run_logs=self._results.get_run_logs(benchmark.id, sample.id),
+            triage=self._results.get_triage(benchmark.id, sample.id),
+            targets=sample_targets,
+            **common_data)  # Pass common data
+        self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
     except Exception as e:
-      logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
-                    sample.id, e)
+        logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
+                     sample.id, e)
 
 class ReportWatcher(FileSystemEventHandler):
   """Watches for file changes and regenerates reports."""

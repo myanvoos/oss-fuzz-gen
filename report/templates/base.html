@@ -13,14 +13,20 @@ html {
 body {
     font-family: sans-serif;
     font-size: 16px;
+    background-color: #f7f9fc;  
+    color: #1a202c; 
+}
+body.dark-mode {
+    background-color: #1a202c;
+    color: #f7fafc;
 }
 table {
     border-collapse: collapse;
     border-spacing: 0;
 }
 td, th {
-    border-right: 1px #dedede solid;
-    border-bottom: 1px #dedede solid;
+    border-right: 1px #a0aec0 solid;
+    border-bottom: 1px #a0aec0 solid;
     padding: 5px;
     text-align: left;
 }
@@ -29,19 +35,19 @@ td, th {
     border-bottom: 1px #4a5568 solid;
 }
 td:first-child, th:first-child {
-    border-left: 1px #dedede solid;
+    border-left: 1px #a0aec0 solid;
 }
 .dark-mode td:first-child, .dark-mode th:first-child {
     border-left: 1px #4a5568 solid;
 }
 th {
-    border-top: 1px #dedede solid;
+    border-top: 1px #a0aec0 solid;
 }
 .dark-mode th {
     border-top: 1px #4a5568 solid;
 }
 tbody tr:nth-child(odd) {
-    background-color: #f4f5ff;
+    background-color: #edf2f7;
 }
 .dark-mode tbody tr:nth-child(odd) {
     background-color: #2d3748;
@@ -59,8 +65,8 @@ tbody tr:nth-child(odd) {
 }
 .code-container {
     display: flex;
-    border: 1px solid #dedede;
-    background-color: #f8f8f8;
+    border: 1px solid #a0aec0;
+    background-color: #edf2f7;
     overflow-x: auto;
     font-family: monospace;
     width: fit-content;
@@ -73,11 +79,11 @@ tbody tr:nth-child(odd) {
     margin: 0;
     padding: 0.5em;
     text-align: right;
-    background-color: #f0f0f0;
-    border-right: 1px solid #ddd;
+    background-color: #e2e8f0;
+    border-right: 1px solid #a0aec0;
     user-select: none;
     min-width: 2.5em;
-    color: #999;
+    color: #718096;
 }
 .dark-mode .line-numbers {
     background-color: #1a202c;
@@ -100,37 +106,137 @@ tbody tr:nth-child(odd) {
 <body 
       x-data="{ 
         darkMode: localStorage.getItem('darkMode') === 'true',
+        detailsOpen: false,
         toggleDarkMode() {
-        console.log('Toggling dark mode...');
           this.darkMode = !this.darkMode;
           localStorage.setItem('darkMode', this.darkMode);
         }
       }" 
-      :class="darkMode ? 'bg-gray-900 text-white dark-mode' : 'bg-white text-gray-800'">
-  <div class="bg-blue-700 dark:bg-blue-900 p-4 shadow-md">
-    <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-xl md:text-2xl font-semibold text-white tracking-wide text-center mx-auto font-mono border-b-2 border-white pb-1">SECURITY ASSESSMENT REPORT</h1>
-      <div class="flex items-center space-x-4">
-        <button @click="toggleDarkMode()" class="p-2 rounded-full hover:bg-blue-600 focus:outline-none">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" :class="darkMode ? 'hidden' : 'block'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" :class="darkMode ? 'block' : 'hidden'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
+      :class="darkMode ? 'bg-gray-900 text-white dark-mode' : 'bg-[#f7f9fc] text-gray-800'">
+  <div class="p-8 shadow-md border-b">
+    <div class="flex items-center gap-4 justify-end">
+        <button @click="toggleDarkMode()" class="p-2 rounded-full focus:outline-none transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" :class="darkMode ? 'hidden' : 'block'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" :class="darkMode ? 'block' : 'hidden'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
         </button>
-        <button class="bg-gray-100 hover:bg-gray-200 text-blue-800 font-medium py-1 px-3 rounded text-sm shadow flex items-center space-x-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>Export</span>
+        <div x-data="{ exportOpen: false }" class="relative">
+            <button @click="exportOpen = !exportOpen" class="border font-medium py-2 px-4 rounded text-sm shadow flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Export</span>
+            </button>
+            
+            <div 
+                x-show="exportOpen" 
+                @click.away="exportOpen = false"
+                class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
+                :class="darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'"
+            >
+                <div class="py-1" role="menu">
+                    <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as PDF (.pdf)</a>
+                    <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as CSV (.csv)</a>
+                    <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as Excel (.xlsx)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex flex-col items-center md:items-start gap-4">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wide font-mono border-b-2 pb-2">
+                EXPERIMENT REPORT 
+            </h1>
+        </div>
+
+        {% if accumulated_results %}
+        <div class="text-center md:text-right space-y-2">
+            <p class="text-center md:text-left font-bold">{{time_results.start_time}} → {{time_results.completion_time}}</p>
+            <p class="text-lg md:text-2xl font-semibold">Success Rate: {{ accumulated_results.build_rate|percent }}%</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="container mx-auto mt-6">
+        <button 
+            @click="detailsOpen = !detailsOpen"
+            class="w-full flex items-center justify-between p-3 border rounded-md"
+        >
+            <span class="font-medium">Accumulated Results</span>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="h-5 w-5 transform transition-transform duration-200" 
+                :class="detailsOpen ? 'rotate-180' : ''"
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
         </button>
-      </div>
+        
+        <div 
+            x-show="detailsOpen" 
+            class="mt-4 p-6 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 border border-dashed"
+        >
+            <div class="space-y-2">
+                <p><span class="font-medium">Model:</span> {{model}}</p>
+                <p><span class="font-medium">Total Benchmarks:</span> {{accumulated_results.total_runs}}</p>
+                <p><span class="font-medium">Successful Builds:</span> {{accumulated_results.compiles}}</p>
+                <p><span class="font-medium">Build Rate:</span> {{accumulated_results.build_rate |percent }}%</p>
+            </div>
+            <div class="space-y-2">
+                <p><span class="font-medium">Average Coverage:</span> {{accumulated_results.average_coverage |percent }}%</p>
+                <p><span class="font-medium">Coverage Diff:</span> {{accumulated_results.average_line_coverage_diff |percent }}%</p>
+                <p><span class="font-medium">Crashes:</span> {{accumulated_results.crashes}}</p>
+                <p><span class="font-medium">Total Runtime:</span> {{time_results.total_run_time}}</p>
+            </div>
+        </div>
     </div>
   </div>
+
+  <nav class="text-base my-4 container mx-auto">
+    <ol class="flex items-center space-x-2">
+        <li class="flex items-center space-x-2">
+            <svg class="h-4 w-4" :class="darkMode ? 'text-gray-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+            <a href="/" class="hover:text-gray-600 transition-colors" :class="darkMode ? 'text-gray-300 hover:text-gray-400' : 'text-gray-600'">
+                Main Index
+            </a>
+        </li>
+        
+        {% if benchmark %}
+        <li class="flex items-center space-x-2">
+            <svg class="h-4 w-4" :class="darkMode ? 'text-gray-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+            <a href="../../benchmark/{{ benchmark|urlencode }}/index.html" 
+               class="hover:text-gray-600 transition-colors"
+               :class="darkMode ? 'text-gray-300 hover:text-gray-400' : 'text-gray-600'">
+                {{ benchmark }}
+            </a>
+        </li>
+        {% endif %}
+
+        {% if sample %}
+        <li class="flex items-center space-x-2">
+            <svg class="h-4 w-4" :class="darkMode ? 'text-gray-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+            <span class="text-gray-500" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                Sample {{ sample.id }}
+            </span>
+        </li>
+        {% endif %}
+    </ol>
+  </nav>
   
-  <div class="container mx-auto mt-4">
-    LLM: {{ model }}
+  <div class="container mx-auto mt-8 px-4">
     {% block content %}{% endblock %}
   </div>
 

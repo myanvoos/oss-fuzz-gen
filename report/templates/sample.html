@@ -16,58 +16,64 @@ limitations under the License.
 #}{% extends 'base.html' %}
 
 {% block content %}
-<h1>{{ benchmark }} / {{ sample.id }}</h1>
-Bug: {{ sample.result.crashes and not sample.result.is_semantic_error }}
-<br>
-Crash reason: {{ sample.result.semantic_error }}
-<br>
-<br>
+<div class="space-y-6">
+    <div class="border rounded-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">{{ benchmark }} / {{ sample.id }}</h1>
+        <div class="space-y-2">
+            <p class="flex items-center gap-2">
+                <span class="font-medium">Bug Status:</span>
+                <span class="{% if sample.result.crashes and not sample.result.is_semantic_error %}text-red-600{% else %}text-green-600{% endif %}">
+                    {{ sample.result.crashes and not sample.result.is_semantic_error }}
+                </span>
+            </p>
+            {% if sample.result.semantic_error %}
+            <p class="flex items-center gap-2">
+                <span class="font-medium">Crash Reason:</span>
+                <span class="text-red-600">{{ sample.result.semantic_error }}</span>
+            </p>
+            {% endif %}
+        </div>
+    </div>
 
-{% if triage.result %}
-<h2>Triage</h2>
-<pre>
-{{ triage.result }}
-</pre>
-<br>
-{% endif %}
+    {% if triage.result %}
+    <div class="border rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Triage</h2>
+        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ triage.result }}</pre>
+    </div>
+    {% endif %}
 
-{% if triage.triager_prompt %}
-<h3>Triager prompt</h3>
-<pre>
-{{ triage.triager_prompt }}
-</pre>
-<br>
-{% endif %}
+    {% if triage.triager_prompt %}
+    <div class="border rounded-lg p-6">
+        <h3 class="text-lg font-bold mb-4">Triager Prompt</h3>
+        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ triage.triager_prompt }}</pre>
+    </div>
+    {% endif %}
 
-{% for target in targets %}
-{% if target.fixer_prompt %}
-<h3>Fixer prompt #{{ loop.index - 1 }}</h3>
-<pre>
-{{ target.fixer_prompt }}
-</pre>
-{% endif %}
+    {% for target in targets %}
+    <div class="border rounded-lg p-6">
+        {% if target.fixer_prompt %}
+        <h3 class="text-lg font-bold mb-4">Fixer Prompt #{{ loop.index - 1 }}</h3>
+        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto mb-6">{{ target.fixer_prompt }}</pre>
+        {% endif %}
 
-{% if loop.index == 1 %}
-<h3>Final code</h3>
-{% else %}
-<h3>Code #{{ loop.index - 1}}</h3>
-{% endif %}
-<div class="code-container">
-    <pre class="line-numbers">{% for line in target.code.splitlines() %}<span>{{ loop.index }}</span>{% endfor %}</pre>
-    <pre class="code-content">{% for line in target.code.splitlines() %}<code>{{ line }}</code>{% endfor %}</pre>
+        <h3 class="text-lg font-bold mb-4">{% if loop.index == 1 %}Final Code{% else %}Code #{{ loop.index - 1}}{% endif %}</h3>
+        <div class="code-container rounded-md">
+            <pre class="line-numbers">{% for line in target.code.splitlines() %}<span>{{ loop.index }}</span>{% endfor %}</pre>
+            <pre class="code-content">{% for line in target.code.splitlines() %}<code>{{ line }}</code>{% endfor %}</pre>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="border rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Logs</h2>
+        {% for part in logs %}
+        <pre class="{% if part.chat_prompt %}chat_prompt bg-gray-50{% elif part.chat_response %}chat_response bg-gray-100{% endif %} p-4 rounded-md mb-4 overflow-x-auto">{{ part.content }}</pre>
+        {% endfor %}
+    </div>
+
+    <div class="border rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Run Logs</h2>
+        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ run_logs }}</pre>
+    </div>
 </div>
-{% endfor %}
-
-<h2>Logs</h2>
-{% for part in logs %}
-<pre {% if part.chat_prompt %}class="chat_prompt"{% elif part.chat_response %}class="chat_response"{% endif %}>
-{{ part.content }}
-</pre>
-{% endfor %}
-
-<h2>Run logs</h2>
-<pre>
-{{ run_logs }}
-</pre>
-
 {% endblock %}
