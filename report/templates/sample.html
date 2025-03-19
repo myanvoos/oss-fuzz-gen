@@ -18,22 +18,52 @@ limitations under the License.
 {% block content %}
 <div class="space-y-6">
     <div class="border rounded-lg p-6">
-        <h1 class="text-2xl font-bold mb-4">{{ benchmark }} / {{ sample.id }}</h1>
-        <div class="space-y-2">
-            <p class="flex items-center gap-2">
-                <span class="font-medium">Bug Status:</span>
-                <span class="{% if sample.result.crashes and not sample.result.is_semantic_error %}text-red-600{% else %}text-green-600{% endif %}">
-                    {{ sample.result.crashes and not sample.result.is_semantic_error }}
-                </span>
-            </p>
-            {% if sample.result.semantic_error %}
-            <p class="flex items-center gap-2">
-                <span class="font-medium">Crash Reason:</span>
-                <span class="text-red-600">{{ sample.result.semantic_error }}</span>
-            </p>
-            {% endif %}
+        <div class="flex items-center gap-4 mb-4">
+            <h1 class="text-2xl font-bold">{{ benchmark }} / {{ sample.id }}</h1>
+            <span class="inline-flex items-center px-3 py-1 rounded-full
+                {% if sample.result.crashes %}
+                    bg-red-500 text-white
+                {% else %}
+                    bg-green-300 text-black
+                {% endif %}">
+                {% if sample.result.crashes %}
+                    Crashed
+                {% else %}
+                    No Crash
+                {% endif %}
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full
+              {% if sample.result.crashes and not sample.result.is_semantic_error %}
+                  bg-red-500 text-white
+              {% else %}
+                  bg-green-300 text-black
+              {% endif %}">
+              {% if sample.result.crashes and not sample.result.is_semantic_error %}
+                  Potential Vulnerability
+              {% else %}
+                  No Potential Vulnerability
+              {% endif %}
+          </span>
         </div>
-    </div>
+        {% if sample.result.semantic_error %}
+        <p class="flex items-center gap-2">
+            <span class="font-medium">Diagnosis: {{ sample.result.semantic_error }}</span>
+        </p>
+        {% endif %}
+        
+        {% if sample.result.coverage and sample.result.line_coverage_diff %}
+        <div class="space-y-4 mt-8">
+          <div class="h-64">
+            <canvas id="coverageChart"></canvas>
+          </div>
+
+          <div class="h-64">
+            <canvas id="coverageDiffChart"></canvas>
+          </div>
+        </div>
+        {% endif %}
+         
+      </div>
 
     {% if triage.result %}
     <div class="border rounded-lg p-6">
@@ -49,31 +79,218 @@ limitations under the License.
     </div>
     {% endif %}
 
-    {% for target in targets %}
-    <div class="border rounded-lg p-6">
-        {% if target.fixer_prompt %}
-        <h3 class="text-lg font-bold mb-4">Fixer Prompt #{{ loop.index - 1 }}</h3>
-        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto mb-6">{{ target.fixer_prompt }}</pre>
-        {% endif %}
-
-        <h3 class="text-lg font-bold mb-4">{% if loop.index == 1 %}Final Code{% else %}Code #{{ loop.index - 1}}{% endif %}</h3>
-        <div class="code-container rounded-md">
-            <pre class="line-numbers">{% for line in target.code.splitlines() %}<span>{{ loop.index }}</span>{% endfor %}</pre>
-            <pre class="code-content">{% for line in target.code.splitlines() %}<code>{{ line }}</code>{% endfor %}</pre>
+    <div x-data="{ 
+        codeOpen: true,
+        logsOpen: false,
+        runlogsOpen: false,
+        coverageOpen: false 
+    }" class="space-y-2">
+        <div class="border rounded-lg">
+            <button @click="codeOpen = !codeOpen"
+                    class="w-full p-4 flex justify-between items-center">
+                <span class="text-lg font-bold">Final Code</span>
+                <svg class="w-5 h-5 transform transition-transform duration-200"
+                     :class="{'rotate-180': codeOpen}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="codeOpen" 
+                 class="p-4 border-t">
+                {% for target in targets %}
+                <div class="code-container rounded-md">
+                    <pre class="line-numbers">{% for line in target.code.splitlines() %}<span>{{ loop.index }}</span>{% endfor %}</pre>
+                    <pre class="code-content">{% for line in target.code.splitlines() %}<code>{{ line }}</code>{% endfor %}</pre>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-    </div>
-    {% endfor %}
 
-    <div class="border rounded-lg p-6">
-        <h2 class="text-xl font-bold mb-4">Logs</h2>
-        {% for part in logs %}
-        <pre class="{% if part.chat_prompt %}chat_prompt bg-gray-50{% elif part.chat_response %}chat_response bg-gray-100{% endif %} p-4 rounded-md mb-4 overflow-x-auto">{{ part.content }}</pre>
-        {% endfor %}
-    </div>
+        <div class="border rounded-lg">
+            <button @click="logsOpen = !logsOpen"
+                    class="w-full p-4 flex justify-between items-center">
+                <span class="text-lg font-bold">Logs</span>
+                <svg class="w-5 h-5 transform transition-transform duration-200"
+                     :class="{'rotate-180': logsOpen}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="logsOpen" 
+                 class="p-4 border-t">
+                {% for part in logs %}
+                <pre class="{% if part.chat_prompt %}chat_prompt bg-gray-50{% elif part.chat_response %}chat_response bg-gray-100{% endif %} p-4 rounded-md mb-4 overflow-x-auto">{{ part.content }}</pre>
+                {% endfor %}
+            </div>
+        </div>
 
-    <div class="border rounded-lg p-6">
-        <h2 class="text-xl font-bold mb-4">Run Logs</h2>
-        <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ run_logs }}</pre>
+        <div class="border rounded-lg">
+            <button @click="runlogsOpen = !runlogsOpen"
+                    class="w-full p-4 flex justify-between items-center">
+                <span class="text-lg font-bold">Run Logs</span>
+                <svg class="w-5 h-5 transform transition-transform duration-200"
+                     :class="{'rotate-180': runlogsOpen}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="runlogsOpen" 
+                 class="p-4 border-t">
+                <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ run_logs }}</pre>
+            </div>
+        </div>
+
+        {% if sample.result.coverage_report_path %}
+        <div class="border rounded-lg" 
+             x-data="{ 
+                coverageOpen: false,
+                iframeHeight: '500px',
+                initIframe() {
+                    const observer = new ResizeObserver(entries => {
+                        for (let entry of entries) {
+                            const height = entry.target.contentDocument?.documentElement?.scrollHeight;
+                            if (height) {
+                                this.iframeHeight = `${height}px`;
+                            }
+                        }
+                    });
+                    
+                    const iframe = this.$refs.coverageIframe;
+                    iframe.addEventListener('load', () => {
+                        observer.observe(iframe);
+                    });
+                }
+             }"
+             x-init="initIframe">
+            <button @click="coverageOpen = !coverageOpen"
+                    class="w-full p-4 flex justify-between items-center">
+                <span class="text-lg font-bold">Coverage Report (embedded)</span>
+                <svg class="w-5 h-5 transform transition-transform duration-200"
+                     :class="{'rotate-180': coverageOpen}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="coverageOpen" 
+                 x-cloak
+                 class="p-4 border-t">
+                <iframe x-ref="coverageIframe"
+                        src="{{ sample.result.coverage_report_path }}report.html" 
+                        class="w-full border-0 rounded-md"
+                        :style="'height:' + iframeHeight"
+                        frameborder="0"
+                        scrolling="yes"
+                        title="Coverage Report"></iframe>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script defer>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('coverageChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Coverage Comparison'],
+          datasets: [
+            {
+              label: 'Current Sample',
+              data: [{{ sample.result.coverage |percent }}],
+              backgroundColor: 'rgba(59, 130, 246, 0.5)', // blue-500 with opacity
+              borderColor: 'rgb(59, 130, 246)',
+              borderWidth: 1
+            },
+            {
+              label: 'Benchmark Average',
+              data: [{{ accumulated_results.average_coverage |percent }}],
+              backgroundColor: 'rgba(107, 114, 128, 0.5)', 
+              borderColor: 'rgb(107, 114, 128)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: Math.max({{ sample.result.coverage |percent }}, {{ accumulated_results.average_coverage |percent }}),
+              title: {
+                display: true,
+                text: 'Coverage %'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Coverage Comparison'
+            },
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+
+    const ctxDiff = document.getElementById('coverageDiffChart');
+    if (ctxDiff) {
+      new Chart(ctxDiff, {
+        type: 'bar',
+        data: {
+          labels: ['Coverage Difference'],
+          datasets: [
+            {
+              label: 'Current Sample',
+              data: [{{ sample.result.line_coverage_diff|percent }}],
+              backgroundColor: 'rgba(16, 185, 129, 0.5)', // green-500
+              borderColor: 'rgb(16, 185, 129)',
+              borderWidth: 1
+            },
+            {
+              label: 'Benchmark Average',
+              data: [{{ accumulated_results.average_line_coverage_diff |percent }}],
+              backgroundColor: 'rgba(107, 114, 128, 0.5)',
+              borderColor: 'rgb(107, 114, 128)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: Math.max({{ sample.result.line_coverage_diff|percent }}, {{ accumulated_results.average_line_coverage_diff |percent }}),
+              title: {
+                display: true,
+                text: 'Coverage Diff %'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Coverage Difference Comparison'
+            },
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 10,
+                padding: 8
+              }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
