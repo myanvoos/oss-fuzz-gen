@@ -37,6 +37,28 @@ td .signature {
     text-decoration: none;
 }
 
+.dark-mode td .signature {
+    background: #374151;
+}
+
+.dark-mode .sortable-table th:after {
+    color: #6b7280;
+}
+
+.dark-mode .sortable-table th[data-sorted="asc"]:after,
+.dark-mode .sortable-table th[data-sorted="desc"]:after {
+    color: #e5e7eb;
+}
+
+.dark-mode .table-index {
+    color: #9ca3af;
+}
+
+.dark-mode .sortable-table th[data-sorted="desc"]:after {
+    content: ' \25b4';
+    color: #e5e7eb;
+}
+
 .table-index {
     color: #555;
     font-size: 12px;

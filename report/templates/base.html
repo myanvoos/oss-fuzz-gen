@@ -1,72 +1,62 @@
-{#
-Copyright 2024 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-#}<!doctype html>
-
+<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Experiment results</title>
+<link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
 <style>
 * {
     box-sizing: border-box;
 }
-
 html {
     line-height: 1.15;
 }
-
 body {
     font-family: sans-serif;
     font-size: 16px;
 }
-
 table {
     border-collapse: collapse;
     border-spacing: 0;
 }
-
 td, th {
     border-right: 1px #dedede solid;
     border-bottom: 1px #dedede solid;
     padding: 5px;
     text-align: left;
 }
+.dark-mode td, .dark-mode th {
+    border-right: 1px #4a5568 solid;
+    border-bottom: 1px #4a5568 solid;
+}
 td:first-child, th:first-child {
     border-left: 1px #dedede solid;
+}
+.dark-mode td:first-child, .dark-mode th:first-child {
+    border-left: 1px #4a5568 solid;
 }
 th {
     border-top: 1px #dedede solid;
 }
-
+.dark-mode th {
+    border-top: 1px #4a5568 solid;
+}
 tbody tr:nth-child(odd) {
     background-color: #f4f5ff;
 }
-
+.dark-mode tbody tr:nth-child(odd) {
+    background-color: #2d3748;
+}
 .chat_prompt {
     background-color: #fff7f2;
     max-width: 50%;
     overflow: scroll;
 }
-
 .chat_response {
     background-color: #fcfff2;
     max-width: 50%;
     overflow: scroll;
     margin-left: auto;
 }
-
 .code-container {
     display: flex;
     border: 1px solid #dedede;
@@ -76,7 +66,9 @@ tbody tr:nth-child(odd) {
     width: fit-content;
     max-width: 100%;
 }
-
+.dark-mode .code-container {
+    background-color: #1a202c;
+}
 .line-numbers {
     margin: 0;
     padding: 0.5em;
@@ -87,21 +79,60 @@ tbody tr:nth-child(odd) {
     min-width: 2.5em;
     color: #999;
 }
-
+.dark-mode .line-numbers {
+    background-color: #1a202c;
+}
 .code-content {
     margin: 0;
     padding: 0.5em;
     flex-grow: 0;
 }
-
 .line-numbers span,
 .code-content code {
     display: block;
     line-height: 1.5;
     white-space: pre;
 }
+.dark-mode .code-content code {
+    color: #e2e8f0;
+}
 </style>
-<body>
+<body 
+      x-data="{ 
+        darkMode: localStorage.getItem('darkMode') === 'true',
+        toggleDarkMode() {
+        console.log('Toggling dark mode...');
+          this.darkMode = !this.darkMode;
+          localStorage.setItem('darkMode', this.darkMode);
+        }
+      }" 
+      :class="darkMode ? 'bg-gray-900 text-white dark-mode' : 'bg-white text-gray-800'">
+  <div class="bg-blue-700 dark:bg-blue-900 p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl md:text-2xl font-semibold text-white tracking-wide text-center mx-auto font-mono border-b-2 border-white pb-1">SECURITY ASSESSMENT REPORT</h1>
+      <div class="flex items-center space-x-4">
+        <button @click="toggleDarkMode()" class="p-2 rounded-full hover:bg-blue-600 focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" :class="darkMode ? 'hidden' : 'block'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" :class="darkMode ? 'block' : 'hidden'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </button>
+        <button class="bg-gray-100 hover:bg-gray-200 text-blue-800 font-medium py-1 px-3 rounded text-sm shadow flex items-center space-x-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Export</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="container mx-auto mt-4">
     LLM: {{ model }}
     {% block content %}{% endblock %}
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
 </body>
