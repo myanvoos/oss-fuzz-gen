@@ -13,8 +13,8 @@ html {
 body {
     font-family: sans-serif;
     font-size: 16px;
-    background-color: #f7f9fc;  
-    color: #1a202c; 
+    background-color: #f7f9fc;
+    color: #1a202c;
 }
 body.dark-mode {
     background-color: #1a202c;
@@ -104,15 +104,15 @@ tbody tr:nth-child(odd) {
 }
 
 </style>
-<body 
-      x-data="{ 
+<body
+      x-data="{
         darkMode: localStorage.getItem('darkMode') === 'true',
         detailsOpen: true,
         toggleDarkMode() {
           this.darkMode = !this.darkMode;
           localStorage.setItem('darkMode', this.darkMode);
         }
-      }" 
+      }"
       :class="darkMode ? 'bg-gray-900 text-white dark-mode' : 'bg-[#f7f9fc] text-gray-800'">
 
       DEBUG: python -m report.web -r results -o results-report --serve -t -m vertex_ai-gemini-1.5
@@ -134,9 +134,9 @@ tbody tr:nth-child(odd) {
                 </svg>
                 <span>Export</span>
             </button>
-            
-            <div 
-                x-show="exportOpen" 
+
+            <div
+                x-show="exportOpen"
                 @click.away="exportOpen = false"
                 class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
                 :class="darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'"
@@ -164,7 +164,7 @@ tbody tr:nth-child(odd) {
 
         {% if accumulated_results %}
             <div class="text-center md:text-right space-y-2 text-nowrap flex-shrink-0 min-w-[300px]"
-                 x-data="{ 
+                 x-data="{
                     formatDate(timestamp) {
                         const date = new Date(timestamp);
                         const day = date.getDate().toString().padStart(2, '0');
@@ -188,26 +188,26 @@ tbody tr:nth-child(odd) {
     </div>
 
     <div class="container mx-auto mt-6">
-        <button 
+        <button
             @click="detailsOpen = !detailsOpen"
             class="w-full flex items-center justify-between p-3 focus:outline-none"
             :class="detailsOpen ? 'border-b border-gray-500' : ''"
         >
             <span class="font-medium">Accumulated Results</span>
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="h-5 w-5 transform transition-transform duration-200" 
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 transform transition-transform duration-200"
                 :class="detailsOpen ? 'rotate-180' : ''"
-                fill="none" 
-                viewBox="0 0 24 24" 
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
         </button>
-        
-        <div 
-            x-show="detailsOpen" 
+
+        <div
+            x-show="detailsOpen"
             class="mt-4 p-6 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 border border-dashed border-gray-500"
         >
             <div class="space-y-2">
@@ -234,13 +234,13 @@ tbody tr:nth-child(odd) {
                 Main Index
             </a>
         </li>
-        
+
         {% if benchmark %}
         <li class="flex items-center space-x-2">
             <svg class="h-4 w-4" :class="darkMode ? 'text-gray-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            <a href="../../benchmark/{{ benchmark|urlencode }}/index.html" 
+            <a href="../../benchmark/{{ benchmark|urlencode }}/index.html"
                class="hover:text-gray-600 transition-colors"
                :class="darkMode ? 'text-gray-300 hover:text-gray-400' : 'text-gray-600'">
                 {{ benchmark }}
@@ -260,7 +260,7 @@ tbody tr:nth-child(odd) {
         {% endif %}
     </ol>
   </nav>
-  
+
   <div class="container mx-auto mt-8 px-4">
     {% block content %}{% endblock %}
   </div>

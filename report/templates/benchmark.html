@@ -178,7 +178,7 @@ function createAccordionSection(tagName, contents, index) {
     const id = `${tagName}-${index}`;
     const icon = getTagIcon(tagName);
     const bgColor = getTagColor(tagName);
-    
+
     return `
         <div class="border-b last:border-b-0 dark:border-gray-700">
             <button class="accordion-header w-full p-4 flex items-center justify-between ${bgColor} rounded-t-lg hover:bg-opacity-90 transition-colors duration-200"
@@ -255,7 +255,7 @@ function toggleAccordion(id) {
     const content = document.getElementById(`${id}-content`);
     const icon = document.getElementById(`${id}-icon`);
     const header = icon.parentElement;
-    
+
     content.classList.toggle('hidden');
     icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
     header.setAttribute('aria-expanded', !content.classList.contains('hidden'));
@@ -265,15 +265,15 @@ function toggleAccordion(id) {
 document.addEventListener('DOMContentLoaded', () => {
     const rawPrompt = document.querySelector('pre').textContent;
     const tags = parsePromptTags(rawPrompt);
-    
+
     const structuredPromptDiv = document.getElementById('structured-prompt');
     let structuredHtml = '';
-    
+
     // Create sections in the order they appear
     tags.forEach((tag, index) => {
         structuredHtml += createAccordionSection(tag.type, tag.content, index);
     });
-    
+
     structuredPromptDiv.innerHTML = structuredHtml;
 });
 </script>

@@ -26,12 +26,9 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional
 
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import threading
-
-
 import jinja2
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from report.common import (AccumulatedResult, Benchmark, FileSystem, Project,
                            Results, Sample, Target)
@@ -202,7 +199,7 @@ class GenerateReport:
         'accumulated_results': accumulated_results,
         'time_results': time_results,  # Include it here only
     }
-    
+
     rendered = self._jinja.render(
         'index.html',
         benchmarks=benchmarks,
@@ -227,12 +224,13 @@ class GenerateReport:
         'accumulated_results': self._results.get_macro_insights([benchmark]),
         'time_results': self.read_timings()
     }
-    
-    rendered = self._jinja.render('benchmark.html',
-                                 benchmark=benchmark.id,
-                                 samples=samples,
-                                 prompt=prompt,
-                                 **common_data)  # Pass common data to all templates
+
+    rendered = self._jinja.render(
+        'benchmark.html',
+        benchmark=benchmark.id,
+        samples=samples,
+        prompt=prompt,
+        **common_data)  # Pass common data to all templates
     self._write(f'benchmark/{benchmark.id}/index.html', rendered)
 
   def _write_benchmark_crash(self, benchmark: Benchmark, samples: List[Sample]):
@@ -253,41 +251,42 @@ class GenerateReport:
                               sample_targets: List[Target]):
     """Generate the sample page and write to filesystem."""
     try:
-        # Add common data here too
-        common_data = {
-            'model': self._jinja._env.globals['model'],
-            'time_results': self.read_timings(),
-            'accumulated_results': self._results.get_macro_insights([benchmark])
-        }
-        
-        rendered = self._jinja.render(
-            'sample.html',
-            benchmark=benchmark.id,
-            sample=sample,
-            logs=self._results.get_logs(benchmark.id, sample.id),
-            run_logs=self._results.get_run_logs(benchmark.id, sample.id),
-            triage=self._results.get_triage(benchmark.id, sample.id),
-            targets=sample_targets,
-            **common_data)  # Pass common data
-        self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
+      # Add common data here too
+      common_data = {
+          'model': self._jinja._env.globals['model'],
+          'time_results': self.read_timings(),
+          'accumulated_results': self._results.get_macro_insights([benchmark])
+      }
+
+      rendered = self._jinja.render(
+          'sample.html',
+          benchmark=benchmark.id,
+          sample=sample,
+          logs=self._results.get_logs(benchmark.id, sample.id),
+          run_logs=self._results.get_run_logs(benchmark.id, sample.id),
+          triage=self._results.get_triage(benchmark.id, sample.id),
+          targets=sample_targets,
+          **common_data)  # Pass common data
+      self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
     except Exception as e:
-        logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
-                     sample.id, e)
+      logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
+                    sample.id, e)
+
 
 class ReportWatcher(FileSystemEventHandler):
   """Watches for file changes and regenerates reports."""
-  
+
   def __init__(self, args: argparse.Namespace):
     super().__init__()
     self.args = args
     self.observer = Observer()
     self.server_thread = None
-    self.server = None  
-    
+    self.server = None
+
     if args.watch_filesystem:
       logging.info(f"Watching filesystem for changes in {args.results_dir}")
       self.observer.schedule(self, args.results_dir, recursive=True)
-        
+
     if args.watch_template:
       logging.info(f"DEV: Watching for changes in the report folder")
       self.observer.schedule(self, "report", recursive=True)
@@ -319,12 +318,12 @@ class ReportWatcher(FileSystemEventHandler):
     """Restart the server when the watcher detects a change"""
     logging.info(f"{event.src_path} has been modified. Regenerating report...")
     generate_report(self.args)
-    
+
     if self.args.serve:
       if self.server:
         self.server.shutdown()
         self.server.server_close()
-      
+
       self.server_thread = threading.Thread(target=self._start_server)
       self.server_thread.daemon = True
       self.server_thread.start()
@@ -393,39 +392,41 @@ def _parse_arguments() -> argparse.Namespace:
                       '-w',
                       help='Watch filesystem for changes and generate report.',
                       action='store_true')
-  parser.add_argument('--watch-template',
-                      '-t',
-                      help='Watch the report templates for changes and generate report. For development purposes.',
-                      action='store_true')
+  parser.add_argument(
+      '--watch-template',
+      '-t',
+      help=
+      'Watch the report templates for changes and generate report. For development purposes.',
+      action='store_true')
 
   return parser.parse_args()
 
 
 def main():
-    args = _parse_arguments()
-    logging.getLogger().setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
+  args = _parse_arguments()
+  logging.getLogger().setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
 
-    watcher = ReportWatcher(args)
-    watcher.start()
+  watcher = ReportWatcher(args)
+  watcher.start()
 
-    try:
-        should_continue = args.serve or args.watch_filesystem or args.watch_template
-        
-        while should_continue:
-            generate_report(args)
-            # If interval is specified, wait and regenerate
-            if args.interval_seconds > 0:
-                time.sleep(args.interval_seconds)
-            # If only watching filesystem and no interval, just wait
-            else:
-                time.sleep(1)
-        else:
-            generate_report(args)
-            
-    except KeyboardInterrupt:
-        watcher.stop()
-        logging.info('Exiting.')
-        os._exit(0)
+  try:
+    should_continue = args.serve or args.watch_filesystem or args.watch_template
+
+    while should_continue:
+      generate_report(args)
+      # If interval is specified, wait and regenerate
+      if args.interval_seconds > 0:
+        time.sleep(args.interval_seconds)
+      # If only watching filesystem and no interval, just wait
+      else:
+        time.sleep(1)
+    else:
+      generate_report(args)
+
+  except KeyboardInterrupt:
+    watcher.stop()
+    logging.info('Exiting.')
+    os._exit(0)
 
 
 if __name__ == '__main__':

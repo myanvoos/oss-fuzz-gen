@@ -50,7 +50,7 @@ limitations under the License.
             <span class="font-medium">Diagnosis: {{ sample.result.semantic_error }}</span>
         </p>
         {% endif %}
-        
+
         {% if sample.result.coverage and sample.result.line_coverage_diff %}
         <div class="space-y-4 mt-8">
           <div class="h-64">
@@ -62,7 +62,7 @@ limitations under the License.
           </div>
         </div>
         {% endif %}
-         
+
       </div>
 
     {% if triage.result %}
@@ -79,11 +79,11 @@ limitations under the License.
     </div>
     {% endif %}
 
-    <div x-data="{ 
+    <div x-data="{
         codeOpen: true,
         logsOpen: false,
         runlogsOpen: false,
-        coverageOpen: false 
+        coverageOpen: false
     }" class="space-y-2">
         <div class="border rounded-lg">
             <button @click="codeOpen = !codeOpen"
@@ -95,7 +95,7 @@ limitations under the License.
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
-            <div x-show="codeOpen" 
+            <div x-show="codeOpen"
                  class="p-4 border-t">
                 {% for target in targets %}
                 <div class="code-container rounded-md">
@@ -116,7 +116,7 @@ limitations under the License.
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
-            <div x-show="logsOpen" 
+            <div x-show="logsOpen"
                  class="p-4 border-t">
                 {% for part in logs %}
                 <pre class="{% if part.chat_prompt %}chat_prompt bg-gray-50{% elif part.chat_response %}chat_response bg-gray-100{% endif %} p-4 rounded-md mb-4 overflow-x-auto">{{ part.content }}</pre>
@@ -134,15 +134,15 @@ limitations under the License.
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
-            <div x-show="runlogsOpen" 
+            <div x-show="runlogsOpen"
                  class="p-4 border-t">
                 <pre class="bg-gray-50 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">{{ run_logs }}</pre>
             </div>
         </div>
 
         {% if sample.result.coverage_report_path %}
-        <div class="border rounded-lg" 
-             x-data="{ 
+        <div class="border rounded-lg"
+             x-data="{
                 coverageOpen: false,
                 iframeHeight: '500px',
                 initIframe() {
@@ -154,7 +154,7 @@ limitations under the License.
                             }
                         }
                     });
-                    
+
                     const iframe = this.$refs.coverageIframe;
                     iframe.addEventListener('load', () => {
                         observer.observe(iframe);
@@ -171,11 +171,11 @@ limitations under the License.
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
-            <div x-show="coverageOpen" 
+            <div x-show="coverageOpen"
                  x-cloak
                  class="p-4 border-t">
                 <iframe x-ref="coverageIframe"
-                        src="{{ sample.result.coverage_report_path }}report.html" 
+                        src="{{ sample.result.coverage_report_path }}report.html"
                         class="w-full border-0 rounded-md"
                         :style="'height:' + iframeHeight"
                         frameborder="0"
@@ -206,7 +206,7 @@ limitations under the License.
             {
               label: 'Benchmark Average',
               data: [{{ accumulated_results.average_coverage |percent }}],
-              backgroundColor: 'rgba(107, 114, 128, 0.5)', 
+              backgroundColor: 'rgba(107, 114, 128, 0.5)',
               borderColor: 'rgb(107, 114, 128)',
               borderWidth: 1
             }
