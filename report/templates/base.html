@@ -23,10 +23,12 @@ body.dark-mode {
 table {
     border-collapse: collapse;
     border-spacing: 0;
+    overflow-x:hidden;
+    margin-top: 15px;
+    margin-bottom: 15px;
 }
 td, th {
-    border-right: 1px #a0aec0 solid;
-    border-bottom: 1px #a0aec0 solid;
+    border: 0;
     padding: 5px;
     text-align: left;
 }
@@ -42,6 +44,12 @@ td:first-child, th:first-child {
 }
 th {
     border-top: 1px #a0aec0 solid;
+}
+th:first-child {
+    border-top-left-radius: 8px;
+}
+th:last-child {
+    border-top-right-radius: 8px;
 }
 .dark-mode th {
     border-top: 1px #4a5568 solid;

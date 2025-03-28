@@ -199,30 +199,11 @@ td .signature {
 }
 
 .status-indicator.running {
-    background-color: #fbbf24;  /* yellow-400 */
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
-    animation: pulse 2s infinite;
+    background-color: rgb(253, 96, 96);
 }
 
 .status-indicator.completed {
     background-color: #34d399;  /* green-400 */
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 6px rgba(251, 191, 36, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
-    }
-}
-
-.dark-mode .status-indicator.running {
-    background-color: #fcd34d;  /* yellow-300 */
-    box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.2);
 }
 
 .dark-mode .status-indicator.completed {
@@ -303,76 +284,12 @@ td .signature {
 }
 </style>
 
-<div class="controls mt-8 flex flex-col gap-4">
-    <div class="search-controls flex flex-wrap gap-4 items-center">
-        <div class="search-bar flex-grow max-w-2xl">
-            <input type="text"
-                   id="searchInput"
-                   placeholder="Search benchmarks..."
-                   class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
-        </div>
-        <div class="filter-buttons flex gap-2">
-            <button onclick="toggleFilter('bugs')"
-                    id="bugsFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Bugs
-            </button>
-            <button onclick="toggleFilter('crashes')"
-                    id="crashesFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Crashes
-            </button>
-            <button onclick="toggleFilter('error')"
-                    id="errorFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Error
-            </button>
-        </div>
-    </div>
-    <div class="active-filters flex flex-wrap gap-2" id="activeFilters">
-        <!-- Active filters -->
-    </div>
-</div>
-
 <div x-data="{
     projectOpen: true,
     languageOpen: true,
-    crashesFoundOpen: false,
+    crashesFoundOpen: true,
+    ofgMetricsOpen: true,
 }" class="space-y-2">
-    <div class="border rounded-lg">
-        <button @click="languageOpen = !languageOpen"
-                class="w-full p-4 flex justify-between items-center">
-            <span class="text-lg font-bold">
-                Language coverage analysis
-            </span>
-            <svg class="w-5 h-5 transform transition-transform duration-200"
-                 :class="{'rotate-180': languageOpen}"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </button>
-
-        <div x-show="languageOpen"
-             class="p-4 border-t">
-            <div class="chart-container">
-                <div class="chart-row">
-                    <div class="chart-box">
-                        <canvas id="languageDistributionChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <canvas id="ossFuzzLinesChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-row">
-                <div class="chart-box">
-                    <canvas id="newCoverageChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <canvas id="coverageIncreaseChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="border rounded-lg">
         <button @click="projectOpen = !projectOpen"
@@ -389,6 +306,48 @@ td .signature {
         <div x-show="projectOpen"
              class="p-4 border-t">
 
+             <div class="controls mt-4 flex flex-col gap-4">
+                <div class="search-controls flex flex-wrap gap-4 items-center">
+                    <div class="search-bar flex-grow max-w-2xl">
+                        <input type="text"
+                               id="searchInput"
+                               placeholder="Search benchmarks..."
+                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
+                    </div>
+                    <div class="filter-buttons flex gap-2">
+                        <button onclick="toggleFilter('bugs')"
+                                id="bugsFilter"
+                                class="filter-btn px-3 py-1 rounded-full text-sm border">
+                            Has Bugs
+                        </button>
+                        <button onclick="toggleFilter('crashes')"
+                                id="crashesFilter"
+                                class="filter-btn px-3 py-1 rounded-full text-sm border">
+                            Has Crashes
+                        </button>
+                        <button onclick="toggleFilter('error')"
+                                id="errorFilter"
+                                class="filter-btn px-3 py-1 rounded-full text-sm border">
+                            Has Error
+                        </button>
+                    </div>
+                </div>
+                <div class="active-filters flex flex-wrap gap-2" id="activeFilters">
+                    <!-- Active filters -->
+                </div>
+            </div>
+
+             <div class="flex justify-between">
+                <div class="controls flex gap-2">
+                    <button id="expand-all" class="border rounded-lg p-5">
+                        Expand All
+                    </button>
+                    <button id="collapse-all" class="border rounded-lg p-5">
+                        Collapse All
+                    </button>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="sortable-table min-w-full" id="summary-table">
                     <thead>
@@ -399,8 +358,8 @@ td .signature {
                             <th data-sort-number>Successful benchmarks</th>
                             <th data-sort-number>Total coverage gain</th>
                             <th data-sort-number>Total relative gain</th>
-                            <th data-sort-number>OSS-Fuzz-gen total covered lines</th>
-                            <th data-sort-number>OSS-Fuzz-gen new covered lines</th>
+                            <th data-sort-number>OSS-Fuzz-Gen total covered lines</th>
+                            <th data-sort-number>OSS-Fuzz-Gen new covered lines</th>
                             <th data-sort-number>Existing covered lines</th>
                             <th data-sort-number>Total project lines</th>
                         </tr>
@@ -408,8 +367,44 @@ td .signature {
                     <tbody>
                         {% for project in projects %}
                         <tr>
-                            <td class="table-index">{{ loop.index }}</td>
-                            <td data-sort-value="{{ project.name }}">{{ project.name }}</td>
+                            <td class="table-index">
+                                <!-- {{ loop.index }} -->
+                                <button class="w-5 h-5 flex items-center justify-center focus:outline-none" @click="$refs.benchmarks_{{ loop.index }}.classList.toggle('hidden')">
+                                    <svg class="w-4 h-4 transform transition-transform duration-200" :class="{'rotate-180': !$refs.benchmarks_{{ loop.index }}.classList.contains('hidden')}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </td>
+                            {% set ns = namespace(running=false, bug_found=false) %}
+                            <td data-sort-value="{{ project.name }}" class="w-full">
+                                <button @click="$refs.benchmarks_{{ loop.index }}.classList.toggle('hidden')" class="text-left font-medium hover:text-blue-600 focus:outline-none">
+                                    {{ project.name }}
+                                    {% set ns = namespace(running=false,
+                                        bug_found=false,
+                                        aggregated_build_rate=0,
+                                        aggregated_crash_rate=0,
+                                        aggregated_found_bug=0,
+                                        aggregated_max_coverage=0,
+                                        aggregated_max_line_coverage_diff=0) %}
+                                    {% for benchmark in benchmarks %}
+                                        {% if benchmark.project == project.name %}
+                                            {% if benchmark.status == "Running" %}
+                                                {% set ns.running = true %}
+                                            {% endif %}
+                                            {% if benchmark.result.found_bug %}
+                                                {% set ns.bug_found = true %}
+                                                <!-- TODO(myan): Track the average number of bugs as well, in order to  identify if a single benchmark has an exceptionally high bug count making it an outlier that needs priority fixing -->
+                                            {% endif %}
+                                            {% set ns.aggregated_build_rate = ns.aggregated_build_rate + benchmark.result.build_success_rate %}
+                                            {% set ns.aggregated_crash_rate = ns.aggregated_crash_rate + benchmark.result.crash_rate %}
+                                            {% set ns.aggregated_found_bug = ns.aggregated_found_bug + benchmark.result.found_bug %}
+                                            {% set ns.aggregated_max_coverage = ns.aggregated_max_coverage + benchmark.result.max_coverage %}
+                                            {% set ns.aggregated_max_line_coverage_diff = ns.aggregated_max_line_coverage_diff + benchmark.result.max_line_coverage_diff %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="status-indicator ml-1 {{ 'running' if ns.bug_found else 'completed' }}"></span>
+                                </button>
+                            </td>
                             <td data-sort-value="{{ project.count }}">{{ project.count }}</td>
                             <td data-sort-value="{{ project.success }}">{{ project.success }}</td>
                             <td data-sort-value="{{ project.coverage_gain|percent }}">{{ project.coverage_gain|percent }}%</td>
@@ -419,129 +414,62 @@ td .signature {
                             <td data-sort-value="{{ project.coverage_existing_total_covered_lines}}">{{ project.coverage_existing_total_covered_lines}}</td>
                             <td data-sort-value="{{ project.coverage_existing_total_lines}}">{{ project.coverage_existing_total_lines}}</td>
                         </tr>
+                        <tr>
+                            <td colspan="10" class="">
+                                <div x-ref="benchmarks_{{ loop.index }}" class="hidden">
+                                    <table class="sortable-table min-w-full ml-8">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th data-sorted="asc">Benchmark</th>
+                                                <th>Status</th>
+                                                <th data-sort-number>Build Rate</th>
+                                                <th data-sort-number>Crash Rate</th>
+                                                <th data-sort-number>Bugs</th>
+                                                <th data-sort-number>Program Counter Coverage</th>
+                                                <th data-sort-number>Line Coverage Diff</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for benchmark in benchmarks %}
+                                            {% if benchmark.project == project.name %}
+                                            <tr>
+                                                <td class="table-index">
+                                                    <!-- {{ loop.index }} -->
+                                                    
+                                                </td>
+                                                <td data-sort-value="{{ benchmark.id }}">
+                                                    <pre class="signature">
+                                                        <a href="benchmark/{{ benchmark.id|urlencode }}/index.html">{{ benchmark.signature }}</a>
+                                                    </pre>
+                                                </td>
+                                                <td data-sort-value="{{ benchmark.status }}">{{ benchmark.status }}</td>
+                                                <td data-sort-value="{{ benchmark.result.build_success_rate|percent }}">{{ benchmark.result.build_success_rate|percent}}</td>
+                                                <td data-sort-value="{{ benchmark.result.crash_rate|percent }}"><a href="benchmark/{{ benchmark.id|urlencode }}/crash.json"> {{ benchmark.result.crash_rate|percent }} </a></td>
+                                                <td data-sort-value="{{ benchmark.result.found_bug }}">{{ benchmark.result.found_bug }}</td>
+                                                <td data-sort-value="{{ benchmark.result.max_coverage |percent }}">{{ benchmark.result.max_coverage |percent }}</td>
+                                                <td data-sort-value="{{ benchmark.result.max_line_coverage_diff|percent }}"><a href="{{ benchmark.result.max_coverage_diff_report | cov_report_link }}">{{ benchmark.result.max_line_coverage_diff|percent }}</a></td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                            <tr class="font-bold">
+                                                <td>Average</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>{{ (ns.aggregated_build_rate / project.count)|percent }}</td>
+                                                <td>{{ (ns.aggregated_crash_rate / project.count)|percent }}</td>
+                                                <td>{{ ns.aggregated_found_bug }}</td>
+                                                <td>{{ (ns.aggregated_max_coverage / project.count)|percent }}</td>
+                                                <td>{{ (ns.aggregated_max_line_coverage_diff / project.count)|percent }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
-
-            <div class="flex justify-between">
-                <div class="controls mt-8 flex gap-2">
-                    <button id="expand-all" class="border rounded-lg p-5">
-                        Expand All
-                    </button>
-                    <button id="collapse-all" class="border rounded-lg p-5">
-                        Collapse All
-                    </button>
-                </div>
-                <div>
-                    <!-- <span class="status-indicator ml-2 completed"></span>
-                    <span class="status-indicator ml-2 running"></span> -->
-                </div>
-            </div>
-
-
-            <div id="benchmarks-container" class="mt-8">
-                {% for project in projects %}
-                <div class="project-group">
-                    <div class="project-header rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors">
-                        <span class="font-medium">{{ project.name }}</span>
-                        <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">({{ project.count }} benchmarks)</span>
-                        {% set ns = namespace(running=false,
-                                            bug_found=false,
-                                            aggregated_build_rate=0,
-                                            aggregated_crash_rate=0,
-                                            aggregated_found_bug=0,
-                                            aggregated_max_coverage=0,
-                                            aggregated_max_line_coverage_diff=0) %}
-                        {% for benchmark in benchmarks %}
-                            {% if benchmark.project == project.name %}
-                                {% if benchmark.status == "Running" %}
-                                    {% set ns.running = true %}
-                                {% endif %}
-                                {% if benchmark.result.found_bug %}
-                                    {% set ns.bug_found = true %}
-                                {% endif %}
-                                {% set ns.aggregated_build_rate = ns.aggregated_build_rate + benchmark.result.build_success_rate %}
-                                {% set ns.aggregated_crash_rate = ns.aggregated_crash_rate + benchmark.result.crash_rate %}
-                                {% set ns.aggregated_found_bug = ns.aggregated_found_bug + benchmark.result.found_bug %}
-                                {% set ns.aggregated_max_coverage = ns.aggregated_max_coverage + benchmark.result.max_coverage %}
-                                {% set ns.aggregated_max_line_coverage_diff = ns.aggregated_max_line_coverage_diff + benchmark.result.max_line_coverage_diff %}
-                            {% endif %}
-                        {% endfor %}
-                        <span class="status-indicator ml-2 {{ 'running' if ns.running else 'completed' }}"></span>
-                        {% if ns.bug_found %}
-                            <span class="ml-2 inline-flex items-center px-3 py-1 rounded-full bg-red-400 text-white">
-                                Bug
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="benchmark-group">
-                        <table class="sortable-table min-w-full">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th data-sorted="asc">Benchmark</th>
-                                    <th>Status</th>
-                                    <th data-sort-number>Build Rate</th>
-                                    <th data-sort-number>Crash Rate</th>
-                                    <th data-sort-number>Bugs</th>
-                                    <th data-sort-number>Program Counter Coverage</th>
-                                    <th data-sort-number>Line Coverage Diff</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for benchmark in benchmarks %}
-                                {% if benchmark.project == project.name %}
-                                <tr>
-                                    <td class="table-index">{{ loop.index }}</td>
-                                    <td data-sort-value="{{ benchmark.id }}">
-                                        <pre class="signature">
-                                            <a href="benchmark/{{ benchmark.id|urlencode }}/index.html">{{ benchmark.signature }}</a>
-                                        </pre>
-                                    </td>
-                                    <td data-sort-value="{{ benchmark.status }}">{{ benchmark.status }}</td>
-                                    <td data-sort-value="{{ benchmark.result.build_success_rate|percent }}">{{ benchmark.result.build_success_rate|percent}}</td>
-                                    <td data-sort-value="{{ benchmark.result.crash_rate|percent }}"><a href="benchmark/{{ benchmark.id|urlencode }}/crash.json"> {{ benchmark.result.crash_rate|percent }} </a></td>
-                                    <td data-sort-value="{{ benchmark.result.found_bug }}">{{ benchmark.result.found_bug }}</td>
-                                    <td data-sort-value="{{ benchmark.result.max_coverage |percent }}">{{ benchmark.result.max_coverage |percent }}</td>
-                                    <td data-sort-value="{{ benchmark.result.max_line_coverage_diff|percent }}"><a href="{{ benchmark.result.max_coverage_diff_report | cov_report_link }}">{{ benchmark.result.max_line_coverage_diff|percent }}</a></td>
-                                </tr>
-                                {% endif %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-
-                        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                                Aggregated Experiment Statistics
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div class="stat-card">
-                                    <div class="stat-label">Build Success Rate</div>
-                                    <div class="stat-value">{{ (ns.aggregated_build_rate / project.count)|percent }}%</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">Crash Rate</div>
-                                    <div class="stat-value">{{ (ns.aggregated_crash_rate / project.count)|percent }}%</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">Found Bugs</div>
-                                    <div class="stat-value">{{ (ns.aggregated_found_bug / project.count) }}</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">Program Counter Coverage</div>
-                                    <div class="stat-value">{{ (ns.aggregated_max_coverage / project.count)|percent }}%</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-label">Line Coverage Difference</div>
-                                    <div class="stat-value">{{ (ns.aggregated_max_line_coverage_diff / project.count)|percent }}%</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                {% endfor %}
             </div>
 
         </div>
@@ -588,160 +516,69 @@ td .signature {
         </div>
     </div>
 
-    <!-- New Project Comparison Section -->
-    <div class="border rounded-lg"
-         x-data="{
-            comparisonOpen: false,
-            selectedProjects: [],
-            toggleProject(projectName) {
-                if (this.selectedProjects.includes(projectName)) {
-                    this.selectedProjects = this.selectedProjects.filter(p => p !== projectName);
-                } else {
-                    this.selectedProjects.push(projectName);
-                }
-                this.$nextTick(() => {
-                    updateComparisonChart(this.selectedProjects);
-                });
-            }
-         }">
-        <button @click="comparisonOpen = !comparisonOpen"
+    <div class="border rounded-lg">
+        <button @click="ofgMetricsOpen = !ofgMetricsOpen"
                 class="w-full p-4 flex justify-between items-center">
             <span class="text-lg font-bold">
-                Project comparison
+                OSS-Fuzz-Gen / existing coverage comparison
             </span>
             <svg class="w-5 h-5 transform transition-transform duration-200"
-                 :class="{'rotate-180': comparisonOpen}"
+                 :class="{'rotate-180': ofgMetricsOpen}"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
         </button>
-        <div x-show="comparisonOpen"
+
+        <div x-show="ofgMetricsOpen"
              class="p-4 border-t">
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select projects to compare:
-                </label>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    {% for project in projects %}
-                    <button
-                        @click="toggleProject('{{ project.name }}')"
-                        :class="{'bg-blue-500 text-white': selectedProjects.includes('{{ project.name }}')}"
-                        class="px-3 py-1 rounded-full text-sm border hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors">
-                        {{ project.name }}
-                    </button>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div x-show="selectedProjects.length > 0">
-                <div class="overflow-x-auto mb-6">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Metric</th>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" x-text="project"></th>
-                                </template>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Basic Metrics -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Total Benchmarks</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'count')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Successful Benchmarks</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'success')"></td>
-                                </template>
-                            </tr>
-                            <!-- Coverage Metrics -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Coverage Gain</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'coverage_gain'), 'coverage_gain')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Total Coverage Gain</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'coverage_relative_gain'), 'coverage_relative_gain')"></td>
-                                </template>
-                            </tr>
-                            <!-- Line Coverage Metrics -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">OSS-Fuzz Total Covered Lines</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'coverage_ofg_total_covered_lines')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">OSS-Fuzz New Covered Lines</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'coverage_ofg_total_new_covered_lines')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Existing Covered Lines</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'coverage_existing_total_covered_lines')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Total Project Lines</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="getProjectData(project, 'coverage_existing_total_lines')"></td>
-                                </template>
-                            </tr>
-                            <!-- New Aggregated Metrics -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Build Success Rate</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'build_rate'), 'build_rate')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Crash Rate</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'crash_rate'), 'crash_rate')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Found Bugs</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'found_bug'), 'found_bug')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Program Counter Coverage</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'pc_coverage'), 'pc_coverage')"></td>
-                                </template>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">Line Coverage Difference</td>
-                                <template x-for="project in selectedProjects" :key="project">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="formatMetricValue(getProjectData(project, 'line_coverage_diff'), 'line_coverage_diff')"></td>
-                                </template>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="h-96">
-                        <canvas id="coverageComparisonChart"></canvas>
+            <div class="chart-container">
+                <div class="chart-row">
+                    <div class="chart-box">
+                        <canvas id="ofgCoverageComparisonChart"></canvas>
                     </div>
-                    <div class="h-96">
-                        <canvas id="ratesComparisonChart"></canvas>
+                    <div class="chart-box">
+                        <canvas id="ofgCoverageGainChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="border rounded-lg">
+        <button @click="languageOpen = !languageOpen"
+                class="w-full p-4 flex justify-between items-center">
+            <span class="text-lg font-bold">
+                Language coverage analysis
+            </span>
+            <svg class="w-5 h-5 transform transition-transform duration-200"
+                 :class="{'rotate-180': languageOpen}"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+
+        <div x-show="languageOpen"
+             class="p-4 border-t">
+            <div class="chart-container">
+                <div class="chart-row">
+                    <div class="chart-box">
+                        <canvas id="languageDistributionChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="ossFuzzLinesChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-box">
+                    <canvas id="newCoverageChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="coverageIncreaseChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 </div>
 
@@ -827,7 +664,6 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Pre-calculate colors in the template
     const languageColors = {
         {% for language in coverage_language_gains['coverage_gains_per_language'].keys() %}
             '{{ language }}': 'rgba(59, 130, 246, 0.5)', // blue-500 with opacity
@@ -1114,15 +950,159 @@ document.addEventListener('DOMContentLoaded', function() {
             row.classList.toggle('benchmark-row-hidden', !shouldShow);
         });
 
-        // Update project visibility based on visible benchmarks
         document.querySelectorAll('.project-group').forEach(project => {
             const visibleBenchmarks = project.querySelectorAll('tbody tr:not(.benchmark-row-hidden)').length;
             project.classList.toggle('benchmark-row-hidden', visibleBenchmarks === 0);
         });
     }
 
-    // Add search input listener
     searchInput.addEventListener('input', applyFilters);
+
+    const ofgCoverageCtx = document.getElementById('ofgCoverageComparisonChart');
+    if (ofgCoverageCtx) {
+        new Chart(ofgCoverageCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ projects|map(attribute='name')|list|tojson }},
+                datasets: [{
+                    label: 'OSS-Fuzz-Gen Covered Lines',
+                    data: [
+                        {% for project in projects %}
+                            {{ project.coverage_ofg_total_covered_lines }}{{ "," if not loop.last }}
+                        {% endfor %}
+                    ],
+                    backgroundColor: blueColor.fill,
+                    borderColor: blueColor.border,
+                    borderWidth: 1
+                }, {
+                    label: 'Existing Covered Lines',
+                    data: [
+                        {% for project in projects %}
+                            {{ project.coverage_existing_total_covered_lines }}{{ "," if not loop.last }}
+                        {% endfor %}
+                    ],
+                    backgroundColor: greenColor.fill,
+                    borderColor: greenColor.border,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'OSS-Fuzz-Gen vs Existing Coverage Comparison'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Lines'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const ofgGainCtx = document.getElementById('ofgCoverageGainChart');
+    if (ofgGainCtx) {
+        new Chart(ofgGainCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ projects|map(attribute='name')|list|tojson }},
+                datasets: [{
+                    label: 'New Covered Lines',
+                    data: [
+                        {% for project in projects %}
+                            {{ project.coverage_ofg_total_new_covered_lines }}{{ "," if not loop.last }}
+                        {% endfor %}
+                    ],
+                    backgroundColor: blueColor.fill,
+                    borderColor: blueColor.border,
+                    borderWidth: 1,
+                    yAxisID: 'y-lines'
+                }, {
+                    label: 'Relative Coverage Gain (%)',
+                    data: [
+                        {% for project in projects %}
+                            {{ project.coverage_relative_gain * 100 }}{{ "," if not loop.last }}
+                        {% endfor %}
+                    ],
+                    type: 'line',
+                    borderColor: greenColor.border,
+                    backgroundColor: greenColor.fill,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: greenColor.point,
+                    yAxisID: 'y-percentage',
+                    datalabels: {
+                        align: 'top',
+                        anchor: 'bottom',
+                        formatter: value => value.toFixed(1) + '%'
+                    }
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    datalabels: {
+                        color: 'rgb(239, 68, 68)',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'New Lines and Relative Gains by OSS-Fuzz-Gen'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    'y-lines': {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Lines'
+                        }
+                    },
+                    'y-percentage': {
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true,
+                        suggestedMax: 100,
+                        title: {
+                            display: true,
+                            text: 'Relative Coverage Gain (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
 
 // Update getProjectData to handle non-percentage metrics correctly
@@ -1175,7 +1155,6 @@ function getProjectData(projectName, metric) {
     return projectData[metric];
 }
 
-// Helper function to format values based on metric type
 function formatMetricValue(value, metric) {
     // List of metrics that should be displayed as percentages
     const percentageMetrics = ['build_rate', 'crash_rate', 'pc_coverage', 'line_coverage_diff', 'coverage_gain', 'coverage_relative_gain'];
@@ -1183,7 +1162,6 @@ function formatMetricValue(value, metric) {
     if (percentageMetrics.includes(metric)) {
         return formatPercent(value);
     }
-    // For non-percentage metrics, return the number as is
     return value.toString();
 }
 
@@ -1192,7 +1170,6 @@ function formatPercent(value) {
 }
 
 function updateComparisonChart(selectedProjects) {
-    // Coverage Comparison Chart
     const ctxCoverage = document.getElementById('coverageComparisonChart');
     if (window.coverageChart) window.coverageChart.destroy();
 
@@ -1234,7 +1211,6 @@ function updateComparisonChart(selectedProjects) {
         }
     });
 
-    // Update Rates and Bugs Chart
     const ctxRates = document.getElementById('ratesComparisonChart');
     if (window.ratesChart) window.ratesChart.destroy();
 

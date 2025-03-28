@@ -146,7 +146,6 @@ limitations under the License.
 </div>
 
 <script>
-// Function to escape HTML special characters
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -173,7 +172,6 @@ function parsePromptTags(rawPrompt) {
     return tags;
 }
 
-// Function to create an accordion section
 function createAccordionSection(tagName, contents, index) {
     const id = `${tagName}-${index}`;
     const icon = getTagIcon(tagName);
@@ -201,7 +199,6 @@ function createAccordionSection(tagName, contents, index) {
     `;
 }
 
-// Function to get tag-specific icon
 function getTagIcon(tagName) {
     const icons = {
         system: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
@@ -213,7 +210,6 @@ function getTagIcon(tagName) {
     return icons[tagName] || '';
 }
 
-// Function to get tag-specific background color
 function getTagColor(tagName) {
     const colors = {
         system: 'bg-blue-100 dark:bg-blue-900',
@@ -225,32 +221,26 @@ function getTagColor(tagName) {
     return colors[tagName] || 'bg-gray-100 dark:bg-gray-900';
 }
 
-// Function to format content (code blocks and function signatures)
 function formatContent(content) {
     let formatted = content;
-    // First escape any HTML in the content
     formatted = escapeHtml(formatted);
-    // Then apply our formatting
     formatted = formatCodeBlocks(formatted);
     formatted = formatFunctionSignature(formatted);
     return formatted;
 }
 
-// Function to extract and format code blocks
 function formatCodeBlocks(content) {
     return content.replace(/<code>([\s\S]*?)<\/code>/g, (match, code) => {
         return `<pre class="bg-gray-100 dark:bg-gray-900 p-2 my-2 rounded-lg overflow-x-auto"><code>${code}</code></pre>`;
     });
 }
 
-// Function to extract and format function signatures
 function formatFunctionSignature(content) {
     return content.replace(/<function signature>([\s\S]*?)<\/function signature>/g, (match, signature) => {
         return `<div class="bg-blue-50 dark:bg-blue-900 p-3 my-2 rounded-lg font-mono">${signature}</div>`;
     });
 }
 
-// Function to toggle accordion sections
 function toggleAccordion(id) {
     const content = document.getElementById(`${id}-content`);
     const icon = document.getElementById(`${id}-icon`);
