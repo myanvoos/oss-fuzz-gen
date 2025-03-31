@@ -193,21 +193,14 @@ class GenerateReport:
                         samples_with_bugs: list[dict[str, Any]],
                         coverage_language_gains: dict[str, Any]):
     """Generate the report index.html and write to filesystem."""
-    # Define common data that should be available in base.html
-    common_data = {
-        'model': self._jinja._env.globals['model'],
-        'accumulated_results': accumulated_results,
-        'time_results': time_results,  # Include it here only
-    }
-
     rendered = self._jinja.render(
         'index.html',
         benchmarks=benchmarks,
+        accumulated_results=accumulated_results,
+        time_results=time_results,
         projects=projects,
         samples_with_bugs=samples_with_bugs,
-        coverage_language_gains=coverage_language_gains,
-        **common_data  # Pass common data to all templates
-    )
+        coverage_language_gains=coverage_language_gains)
     self._write('index.html', rendered)
 
   def _write_index_json(self, benchmarks: List[Benchmark]):
@@ -218,19 +211,10 @@ class GenerateReport:
   def _write_benchmark_index(self, benchmark: Benchmark, samples: List[Sample],
                              prompt: Optional[str]):
     """Generate the benchmark index.html and write to filesystem."""
-    # Pass the same common data here
-    common_data = {
-        'model': self._jinja._env.globals['model'],
-        'accumulated_results': self._results.get_macro_insights([benchmark]),
-        'time_results': self.read_timings()
-    }
-
-    rendered = self._jinja.render(
-        'benchmark.html',
-        benchmark=benchmark.id,
-        samples=samples,
-        prompt=prompt,
-        **common_data)  # Pass common data to all templates
+    rendered = self._jinja.render('benchmark.html',
+                                  benchmark=benchmark.id,
+                                  samples=samples,
+                                  prompt=prompt)
     self._write(f'benchmark/{benchmark.id}/index.html', rendered)
 
   def _write_benchmark_crash(self, benchmark: Benchmark, samples: List[Sample]):
@@ -251,13 +235,6 @@ class GenerateReport:
                               sample_targets: List[Target]):
     """Generate the sample page and write to filesystem."""
     try:
-      # Add common data here too
-      common_data = {
-          'model': self._jinja._env.globals['model'],
-          'time_results': self.read_timings(),
-          'accumulated_results': self._results.get_macro_insights([benchmark])
-      }
-
       rendered = self._jinja.render(
           'sample.html',
           benchmark=benchmark.id,
@@ -265,8 +242,7 @@ class GenerateReport:
           logs=self._results.get_logs(benchmark.id, sample.id),
           run_logs=self._results.get_run_logs(benchmark.id, sample.id),
           triage=self._results.get_triage(benchmark.id, sample.id),
-          targets=sample_targets,
-          **common_data)  # Pass common data
+          targets=sample_targets)
       self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
     except Exception as e:
       logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
@@ -284,17 +260,18 @@ class ReportWatcher(FileSystemEventHandler):
     self.server = None
 
     if args.watch_filesystem:
-      logging.info(f"Watching filesystem for changes in {args.results_dir}")
+      logging.info('Watching filesystem for changes in %s', args.results_dir)
       self.observer.schedule(self, args.results_dir, recursive=True)
 
     if args.watch_template:
-      logging.info(f"DEV: Watching for changes in the report folder")
+      logging.info('DEV: Watching for changes in the report folder')
       self.observer.schedule(self, "report", recursive=True)
 
     if args.serve:
       self.server_thread = threading.Thread(target=self._start_server)
       self.server_thread.daemon = True
       self.server_thread.start()
+      logging.info('Launching webserver at %s:%d', LOCAL_HOST, self.args.port)
 
   def _start_server(self):
     """Helper method to start the server."""
@@ -316,7 +293,7 @@ class ReportWatcher(FileSystemEventHandler):
 
   def on_modified(self, event):
     """Restart the server when the watcher detects a change"""
-    logging.info(f"{event.src_path} has been modified. Regenerating report...")
+    logging.info('%s has been modified. Regenerating report...', event.src_path)
     generate_report(self.args)
 
     if self.args.serve:
@@ -387,16 +364,16 @@ def _parse_arguments() -> argparse.Namespace:
                       '-i',
                       help='Interval in seconds to generate report.',
                       type=int,
-                      default=600)
+                      default=90)
   parser.add_argument('--watch-filesystem',
-                      '-w',
+                      '-wf',
                       help='Watch filesystem for changes and generate report.',
                       action='store_true')
   parser.add_argument(
       '--watch-template',
-      '-t',
-      help=
-      'Watch the report templates for changes and generate report. For development purposes.',
+      '-wt',
+      help='Watch the report templates for changes and generate report. '
+      'For development purposes.',
       action='store_true')
 
   return parser.parse_args()
@@ -414,14 +391,7 @@ def main():
 
     while should_continue:
       generate_report(args)
-      # If interval is specified, wait and regenerate
-      if args.interval_seconds > 0:
-        time.sleep(args.interval_seconds)
-      # If only watching filesystem and no interval, just wait
-      else:
-        time.sleep(1)
-    else:
-      generate_report(args)
+      time.sleep(args.interval_seconds)
 
   except KeyboardInterrupt:
     watcher.stop()
