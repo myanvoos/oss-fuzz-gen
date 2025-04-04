@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # Copyright 2024 Google LLC
 #
@@ -237,16 +236,33 @@ class GenerateReport:
   def _write_benchmark_crash(self, benchmark: Benchmark, samples: List[Sample]):
     """Generate the benchmark crash.json and write to filesystem."""
     try:
-      rendered = self._jinja.render('crash.json',
+        rendered = self._jinja.render('crash.json',
                                     benchmark=benchmark.signature,
                                     samples=samples,
                                     get_benchmark_final_target_code=partial(
                                         self._results.get_final_target_code,
                                         benchmark.id))
-      self._write(f'benchmark/{benchmark.id}/crash.json', rendered)
+        crash_json_path = f'benchmark/{benchmark.id}/crash.json'
+        self._write(crash_json_path, rendered)
+        
+        # Generate CSV file
+        from report.csv_reporter import CSVReporter
+        csv_reporter = CSVReporter(self._output_dir)
+        csv_path = csv_reporter.add_benchmark_crashes(benchmark.id, 
+                                                    os.path.join(self._output_dir, crash_json_path))
+        
+        # Add CSV path to benchmark data for template access
+        if csv_path:
+            relative_csv_path = os.path.relpath(csv_path, self._output_dir)
+            benchmark.csv_path = relative_csv_path
+            logging.info(f"Set benchmark.csv_path to {relative_csv_path}")
+        else:
+            logging.warning(f"No CSV path returned for benchmark {benchmark.id}")
+        
     except Exception as e:
-      logging.error('Failed to write benchmark/%s/crash.json:\n%s',
-                    benchmark.id, e)
+        logging.error(f"Error rendering crash.json for {benchmark.id}: {e}")
+        import traceback
+        traceback.print_exc()
 
   def _write_benchmark_sample(self, benchmark: Benchmark, sample: Sample,
                               sample_targets: List[Target]):
@@ -390,12 +406,12 @@ def _parse_arguments() -> argparse.Namespace:
                       type=int,
                       default=600)
   parser.add_argument('--watch-filesystem',
-                      '-w',
+                      '-wf',
                       help='Watch filesystem for changes and generate report.',
                       action='store_true')
   parser.add_argument(
       '--watch-template',
-      '-t',
+      '-wt',
       help=
       'Watch the report templates for changes and generate report. For development purposes.',
       action='store_true')
