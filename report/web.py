@@ -323,12 +323,13 @@ class GenerateReport:
                               sample_targets: List[Target]):
     """Generate the sample page and write to filesystem."""
     try:
-      # Add common data here too
       common_data = {
           'model': self._jinja._env.globals['model'],
           'time_results': self.read_timings(),
           'accumulated_results': self._results.get_macro_insights([benchmark])
       }
+
+      semantic_log = self._get_semantic_analyzer_log(benchmark.id, sample.id)
 
       rendered = self._jinja.render(
           'sample.html',
@@ -338,11 +339,46 @@ class GenerateReport:
           run_logs=self._results.get_run_logs(benchmark.id, sample.id),
           triage=self._results.get_triage(benchmark.id, sample.id),
           targets=sample_targets,
-          **common_data)  # Pass common data
+          semantic_log=semantic_log,
+          **common_data)
       self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
     except Exception as e:
       logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
                     sample.id, e)
+
+  def _get_semantic_analyzer_log(self, benchmark_id: str, sample_id: str) -> dict:
+    # TODO: This is a temporary fix to get the semantic analyzer log.
+    log_path = os.path.join(self.results_dir, benchmark_id, 'status', sample_id, 'log.txt')
+    if not os.path.exists(log_path):
+      return {}
+    
+    with open(log_path, 'r') as f:
+      content = f.read().strip()
+      if not content:
+        return {}
+      
+      lines = content.split('\n')
+      for i, line in enumerate(lines):
+        if line.startswith('SemanticAnalyzer'):
+          try:
+            data = eval(lines[i+1])
+            if data.get('crash_symptom'):
+              error_msg = data['crash_symptom']
+              
+              if 'AddressSanitizer:' in error_msg:
+                data['sanitizer'] = 'AddressSanitizer'
+                after_asan = error_msg.split('AddressSanitizer:')[1].strip()
+                if 'on address' in after_asan:
+                    data['error_type'] = after_asan.split('on address')[0].strip()
+                    data['crash_address'] = after_asan.split('on address')[1].split('at pc')[0].strip()
+                else:
+                    data['error_type'] = after_asan.split()[0].strip()
+                    data['crash_address'] = ''
+            return data
+          except Exception as e:
+            logging.error("DEBUG Error: %s", e)  
+            return {}
+      return {}
 
 
 class ReportWatcher(FileSystemEventHandler):
