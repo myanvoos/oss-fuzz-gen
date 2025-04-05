@@ -3,6 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Experiment results</title>
 <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {
     box-sizing: border-box;
@@ -11,13 +13,16 @@ html {
     line-height: 1.15;
 }
 body {
-    font-family: sans-serif;
+    font-family: 'Overpass Mono', monospace;
     font-size: 16px;
     background-color: #f7f9fc;
-    color: #1a202c;
+    color: #292929;
+}
+span {
+    font-family: 'Overpass', sans-serif;
 }
 body.dark-mode {
-    background-color: #1a202c;
+    background-color: #292929;
     color: #f7fafc;
 }
 table {
@@ -33,14 +38,14 @@ td, th {
     text-align: left;
 }
 .dark-mode td, .dark-mode th {
-    border-right: 1px #4a5568 solid;
-    border-bottom: 1px #4a5568 solid;
+    border-right: 1px #3d3d3d solid;
+    border-bottom: 1px #3d3d3d solid;
 }
 td:first-child, th:first-child {
     border-left: 1px #a0aec0 solid;
 }
 .dark-mode td:first-child, .dark-mode th:first-child {
-    border-left: 1px #4a5568 solid;
+    border-left: 1px #3d3d3d solid;
 }
 th {
     border-top: 1px #a0aec0 solid;
@@ -52,13 +57,13 @@ th:last-child {
     border-top-right-radius: 8px;
 }
 .dark-mode th {
-    border-top: 1px #4a5568 solid;
+    border-top: 1px #3d3d3d solid;
 }
 tbody tr:nth-child(odd) {
     background-color: #edf2f7;
 }
 .dark-mode tbody tr:nth-child(odd) {
-    background-color: #2d3748;
+    background-color: #333333;
 }
 .chat_prompt {
     background-color: #fff7f2;
@@ -76,12 +81,13 @@ tbody tr:nth-child(odd) {
     border: 1px solid #a0aec0;
     background-color: #edf2f7;
     overflow-x: auto;
-    font-family: monospace;
+    font-family: 'Overpass Mono', monospace;
     width: fit-content;
     max-width: 100%;
 }
 .dark-mode .code-container {
-    background-color: #1a202c;
+    background-color: #222222;
+    border: 1px solid #3d3d3d;
 }
 .line-numbers {
     margin: 0;
@@ -94,7 +100,9 @@ tbody tr:nth-child(odd) {
     color: #718096;
 }
 .dark-mode .line-numbers {
-    background-color: #1a202c;
+    background-color: #222222;
+    border-right: 1px solid #3d3d3d;
+    color: #a0aec0;
 }
 .code-content {
     margin: 0;
@@ -150,7 +158,7 @@ tbody tr:nth-child(odd) {
                 <div class="py-1" role="menu">
                     <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as PDF (.pdf)</a>
                     <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as CSV (.csv)</a>
-                    <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as Excel (.xlsx)</a>
+                    <a href="#" class="block px-4 py-2 text-sm" role="menuitem">Export as Google Sheet</a>
                 </div>
             </div>
         </div>
@@ -267,7 +275,39 @@ tbody tr:nth-child(odd) {
     </ol>
   </nav>
 
-  <div class="container mx-auto mt-8 px-4">
+
+  <div class="controls mt-4 flex flex-col gap-4 mx-auto container">
+    <div class="search-controls flex flex-wrap gap-4 items-center">
+        <div class="search-bar flex-grow max-w-2xl">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Search..."
+                   class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
+        </div>
+        <div class="filter-buttons flex gap-2">
+            <button onclick="toggleFilter('bugs')"
+                    id="bugsFilter"
+                    class="filter-btn px-3 py-1 rounded-full text-sm border">
+                Has Bugs
+            </button>
+            <button onclick="toggleFilter('crashes')"
+                    id="crashesFilter"
+                    class="filter-btn px-3 py-1 rounded-full text-sm border">
+                Has Crashes
+            </button>
+            <button onclick="toggleFilter('error')"
+                    id="errorFilter"
+                    class="filter-btn px-3 py-1 rounded-full text-sm border">
+                Has Error
+            </button>
+        </div>
+    </div>
+    <div class="active-filters flex flex-wrap gap-2" id="activeFilters">
+        <!-- Active filters -->
+    </div>
+</div>
+
+  <div class="container mx-auto mt-8">
     {% block content %}{% endblock %}
   </div>
 
