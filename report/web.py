@@ -255,10 +255,16 @@ class GenerateReport:
             benchmark_metrics["crashes"] += sample.result.crashes
             benchmark_metrics["compiles"] += sample.result.compiles
 
-        build_success_rate = float(benchmark_metrics["compiles"]) / float(len(samples))
-        crash_rate = float(benchmark_metrics["crashes"]) / float(len(samples))
-        average_coverage = benchmark_metrics["total_coverage"] / float(len(samples))
-        average_line_coverage_diff = benchmark_metrics["total_line_coverage_diff"] / float(len(samples))
+        if len(samples) > 0:
+            build_success_rate = float(benchmark_metrics["compiles"]) / float(len(samples))
+            crash_rate = float(benchmark_metrics["crashes"]) / float(len(samples))
+            average_coverage = benchmark_metrics["total_coverage"] / float(len(samples))
+            average_line_coverage_diff = benchmark_metrics["total_line_coverage_diff"] / float(len(samples))
+        else:
+            build_success_rate = 0
+            crash_rate = 0
+            average_coverage = 0
+            average_line_coverage_diff = 0
         
         unified_data[benchmark.project]["benchmarks"][benchmark.id] = {
             "samples": samples_data,
