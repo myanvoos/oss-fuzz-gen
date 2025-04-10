@@ -408,6 +408,11 @@ class Prototyper(BaseAgent):
     prompt = prompt_builder.DefaultTemplateBuilder(self.llm, None).build([])
 
     if response:
+      build_result.chat_history[self.name] += f"\nRound {cur_round}:\n{response}"
+      print("\n\n\n\nADDED CHAT HISTORY\n\n\n\n")
+      print(build_result.chat_history[self.name])
+
+      
       prompt = self._container_handle_bash_commands(response, self.inspect_tool,
                                                     prompt)
 

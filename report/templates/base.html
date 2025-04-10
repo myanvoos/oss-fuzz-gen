@@ -118,12 +118,21 @@ tbody tr:nth-child(odd) {
 .dark-mode .code-content code {
     color: #e2e8f0;
 }
-
+.filter-buttons select {
+    display: flex;
+    background: #f7f9fc;
+    border-radius: 8px;
+    padding: 8px;
+}
+.dark-mode .filter-buttons select {
+    background: #292929;
+}
 </style>
 <body
       x-data="{
         darkMode: localStorage.getItem('darkMode') === 'true',
         detailsOpen: true,
+        showCoverageFilter: false,
         toggleDarkMode() {
           this.darkMode = !this.darkMode;
           localStorage.setItem('darkMode', this.darkMode);
@@ -275,35 +284,53 @@ tbody tr:nth-child(odd) {
     </ol>
   </nav>
 
-
   <div class="controls mt-4 flex flex-col gap-4 mx-auto container">
     <div class="search-controls flex flex-wrap gap-4 items-center">
+        
         <div class="search-bar flex-grow max-w-2xl">
             <input type="text"
                    id="searchInput"
                    placeholder="Search..."
                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
         </div>
-        <div class="filter-buttons flex gap-2">
-            <button onclick="toggleFilter('bugs')"
-                    id="bugsFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Bugs
-            </button>
-            <button onclick="toggleFilter('crashes')"
-                    id="crashesFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Crashes
-            </button>
-            <button onclick="toggleFilter('error')"
-                    id="errorFilter"
-                    class="filter-btn px-3 py-1 rounded-full text-sm border">
-                Has Error
-            </button>
+        <div class="filter-buttons">
+            <div class="relative">
+                <select class="border font-medium py-2 px-4 rounded text-sm shadow flex items-center gap-2">
+                    <option selected disabled>Filters</option>
+                    <option value="cov" @click="showCoverageFilter = !showCoverageFilter">Coverage (COV)</option>
+                    <option value="bug" onclick="toggleFilter('bugs')" id="bugsFilter">Has Bugs (BUG)</option>
+                    <option value="crash" onclick="toggleFilter('crashes')" id="crashesFilter">Has Crashes (CRASH)</option>
+                    <option value="error" onclick="toggleFilter('error')" id="errorFilter">Has Error (ERROR)</option>
+                </select>
+            </div>
         </div>
     </div>
     <div class="active-filters flex flex-wrap gap-2" id="activeFilters">
         <!-- Active filters -->
+    </div>
+</div>
+
+<div x-show="showCoverageFilter" class="mt-4 space-y-4 mx-auto container">
+    <div class="grid grid-cols-3 gap-4 items-center">
+        
+        <label class="block text-md font-medium">Find benchmarks with coverages that are...</label>
+        <div class="space-y-1">
+            <select id="operator"
+                    class="w-full px-3 py-1 rounded border text-md bg-transparent"
+                >
+                <option value=">">GREATER THAN</option>
+                <option value="<">LESS THAN</option>
+                <option value="==">EQUAL TO</option>
+            </select>
+        </div>
+        
+        <div class="space-y-1">
+            <input type="number" 
+                   id="covValue" 
+                   placeholder="e.g., 0.05"
+                   class="w-full px-3 py-1 rounded border text-md bg-transparent"
+            />
+        </div>
     </div>
 </div>
 
@@ -315,4 +342,5 @@ tbody tr:nth-child(odd) {
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jmespath@0.16.0/jmespath.min.js" defer></script>
 </body>

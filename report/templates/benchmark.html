@@ -79,6 +79,154 @@ limitations under the License.
 }
 </style>
 
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Fuzz Target Comparison</h1>
+    <div class="flex gap-2">
+        <select class="border rounded p-2" id="targetSelector1">
+            <option>Sample 01</option>
+            <option>Sample 02</option>
+            <option>OSS-Fuzz target</option>
+        </select>
+        <select class="border rounded p-2" id="targetSelector2">
+            <option>Sample 01</option>
+            <option>Sample 02</option>
+            <option>OSS-Fuzz target</option>
+        </select>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 gap-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Code Diff</h2>
+        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+            <pre><code class="language-cpp">
+#include "hiredis.h"
+#include <stdlib.h>
+#include <string.h>
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  redisContext *context;
+  const char **argv;
+  size_t *argvlen;
+  int argc, i;
+  void *reply;
+  char *new_str;
+  if (size < 3) return 0;
+  new_str = malloc(size + 1);
+  if (new_str == NULL) return 0;
+  memcpy(new_str, data, size);
+  new_str[size] = '\0';
+  context = redisConnect("127.0.0.1", 6379);
+  if (context == NULL || context->err) {
+    free(new_str);
+    if (context) redisFree(context);
+    return 0;
+  }
+  argc = 2;
+  argv = malloc(sizeof(char *) * argc);
+  if (argv == NULL) {
+    free(new_str);
+    redisFree(context);
+    return 0;
+  }
+  argvlen = malloc(sizeof(size_t) * argc);
+  if (argvlen == NULL) {
+    free(new_str);
+    free(argv);
+    redisFree(context);
+    return 0;
+  }
+  argv[0] = "SET";
+  argvlen[0] = 3;
+  argv[1] = new_str;
+  argvlen[1] = size;
+  reply = redisCommandArgv(context, argc, argv, argvlen);
+  if (reply != NULL) freeReplyObject(reply);
+  free(argvlen);
+  free(argv);
+  free(new_str);
+  redisFree(context);
+  return 0;
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="space-y-8">
+            <div>
+                <h2 class="text-lg font-semibold mb-4">Coverage Metrics</h2>
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
+                    <div class="flex justify-between">
+                        <span>Coverage / accumulated:</span>
+                        <div class="flex gap-4">
+                            <span>39.4%</span>
+                            <span>60.6%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Line coverage diff / accumulated:</span>
+                        <div class="flex gap-4">
+                            <span>78%</span>
+                            <span>88%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>OSS-Fuzz coverage diff:</span>
+                        <div class="flex gap-4">
+                            <span class="text-green-500">+5%</span>
+                            <span class="text-green-500">+2%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Bug type:</span>
+                        <div class="flex gap-4">
+                            <span>heap-buffer-overflow</span>
+                            <span>SEGV</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-semibold mb-4">Runtime Statistics</h2>
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
+                    <div class="flex justify-between">
+                        <span>Exec/sec:</span>
+                        <div class="flex gap-4">
+                            <span>0</span>
+                            <span>1052</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>No. executed units:</span>
+                        <div class="flex gap-4">
+                            <span>1212</span>
+                            <span>33684</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Peak memory:</span>
+                        <div class="flex gap-4">
+                            <span>35MB</span>
+                            <span>268MB</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Most used mutation:</span>
+                        <div class="flex gap-4">
+                            <span>InsertByte</span>
+                            <span>ShuffleBytes</span>
+                        </div>
+                    </div>
+                    <div class="h-48 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <canvas id="runtimeChart"></canvas>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h1 class="text-2xl font-bold mb-6">{{ benchmark }}</h1>
 
 <table class="sortable-table">
@@ -261,6 +409,50 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     structuredPromptDiv.innerHTML = structuredHtml;
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('runtimeChart').getContext('2d');
+const labels = Array.from({length: 10}, (_, i) => i + 1);
+const data = Array.from({length: 10}, () => Math.floor(Math.random() * 100));
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Runtime Performance',
+            data: data,
+            borderColor: '#4F46E5',
+            tension: 0.4,
+            fill: true,
+            backgroundColor: 'rgba(79, 70, 229, 0.1)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(156, 163, 175, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(156, 163, 175, 0.1)'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
 });
 </script>
 
