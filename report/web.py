@@ -438,6 +438,8 @@ def main():
   args = _parse_arguments()
   logging.getLogger().setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
 
+  generate_report(args)
+
   watcher = ReportWatcher(args)
   watcher.start()
 
