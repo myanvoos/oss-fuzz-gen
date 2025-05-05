@@ -21,6 +21,7 @@ import os
 import shutil
 import threading
 import time
+import traceback
 import urllib.parse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -67,6 +68,33 @@ class JinjaEnv:
       return link_path + 'index.html'
     return link_path + 'report.html'
 
+  @staticmethod
+  def _remove_trailing_empty_lines(code: str) -> str:
+    """Remove trailing empty lines from code."""
+    if not code:
+      return ""
+
+    try:
+      lines = code.splitlines()
+      while lines and not lines[-1].strip():
+        lines.pop()
+
+      return '\n'.join(lines)
+    except Exception as e:
+      logging.warning("Error in remove_trailing_empty_lines filter: %s", e)
+      return code  # Return original code on error
+
+  @staticmethod
+  def _splitlines(text: str) -> list:
+    """Split text into lines, similar to Python's splitlines()."""
+    if not text:
+      return []
+    try:
+      return text.splitlines()
+    except Exception as e:
+      logging.warning("Error in splitlines filter: %s", e)
+      return [text]  # Return original as single line on error
+
   def __init__(self, template_globals: Optional[Dict[str, Any]] = None):
     self._env = jinja2.Environment(
         loader=jinja2.FileSystemLoader("report/templates"),
@@ -75,6 +103,9 @@ class JinjaEnv:
     self._env.filters['urlencode_filter'] = self._urlencode_filter
     self._env.filters['percent'] = self._percent
     self._env.filters['cov_report_link'] = self._cov_report_link
+    self._env.filters[
+        'remove_trailing_empty_lines'] = self._remove_trailing_empty_lines
+    self._env.filters['splitlines'] = self._splitlines
 
     if template_globals:
       for key, val in template_globals.items():
@@ -329,6 +360,14 @@ class GenerateReport:
                               sample_targets: List[Target]):
     """Generate the sample page and write to filesystem."""
     try:
+      # Ensure all required variables are available
+      logs = self._results.get_logs(benchmark.id, sample.id) or []
+      run_logs = self._results.get_run_logs(benchmark.id, sample.id) or ""
+      triage = self._results.get_triage(benchmark.id, sample.id) or {
+          "result": "",
+          "triager_prompt": ""
+      }
+
       common_data = {
           'model': self._jinja._env.globals['model'],
           'time_results': self.read_timings(),
@@ -347,10 +386,27 @@ class GenerateReport:
           targets=sample_targets,
           semantic_log=semantic_log,
           **common_data)
+    
       self._write(f'sample/{benchmark.id}/{sample.id}.html', rendered)
     except Exception as e:
       logging.error('Failed to write sample/%s/%s:\n%s', benchmark.id,
                     sample.id, e)
+      logging.error('Exception details: %s', traceback.format_exc())
+      # Create a simple error page so users see something
+      try:
+        error_html = f"""
+        <html>
+          <head><title>Error rendering {benchmark.id}/{sample.id}</title></head>
+          <body>
+            <h1>Error rendering sample page</h1>
+            <p>An error occurred while rendering this page. Please check the logs for details.</p>
+            <pre>{str(e)}</pre>
+          </body>
+        </html>
+        """
+        self._write(f'sample/{benchmark.id}/{sample.id}.html', error_html)
+      except Exception:
+        pass  # Ignore errors in error handling
 
   def _get_semantic_analyzer_log(self, benchmark_id: str, sample_id: str) -> dict:
     # TODO: This is a temporary fix to get the semantic analyzer log.
