@@ -204,8 +204,7 @@ def run_ofg_generation(projects_to_run, workdir, args):
   cmd.append('--model')
   cmd.append(args.model)
   cmd.append('-g')
-  cmd.append(
-      'far-reach-low-coverage,low-cov-with-fuzz-keyword,easy-params-far-reach')
+  cmd.append(args.benchmark_oracles)
   cmd.append('-gp')
   cmd.append(','.join(projects_to_run))
   cmd.append('-gm')
@@ -224,6 +223,7 @@ def run_ofg_generation(projects_to_run, workdir, args):
   environ['LLM_NUM_EVA'] = '4'
   environ['LLM_NUM_EXP'] = '4'
   environ['OFG_CLEAN_UP_OSS_FUZZ'] = '0'
+  environ['OFG_USE_CACHING'] = '0'
 
   subprocess.check_call(' '.join(cmd), shell=True, env=environ)
 
@@ -484,6 +484,9 @@ def _run_build_generation(workdir, out_folder, args):
 def run_fuzz_introspector_db_creation(args):
   """Entrypoint for fuzz introspector database creation."""
   args.workdir = os.path.abspath(args.workdir)
+  # Create working directory if it doesn't exist.
+  if not os.path.isdir(args.workdir):
+    args.workdir = setup_workdirs(args.workdir)
   prepare_fuzz_introspector_db(args.generated_builds, args.workdir,
                                args.parallel_build_jobs)
 
@@ -553,7 +556,9 @@ def run_full(args):
     logger.info('- %s', project)
 
   if os.path.isdir('results'):
-    shutil.copytree('results', os.path.join(out_folder, 'harness-results'))
+    shutil.copytree('results',
+                    os.path.join(out_folder, 'harness-results'),
+                    dirs_exist_ok=True)
 
 
 def parse_commandline():
@@ -664,6 +669,11 @@ def parse_commandline():
   run_harness_generation_parser.add_argument('-w',
                                              '--workdir',
                                              help='Work directory to use')
+  run_harness_generation_parser.add_argument(
+      '--benchmark-oracles',
+      default=
+      'far-reach-low-coverage,low-cov-with-fuzz-keyword,easy-params-far-reach,test-migration'
+  )
 
   # Run a full end to end generation.
   run_full_parser = subparsers.add_parser(
@@ -708,6 +718,12 @@ def parse_commandline():
                                help='Parallel build-generator jobs to run.',
                                default=2,
                                type=int)
+  run_full_parser.add_argument(
+      '--benchmark-oracles',
+      default=
+      'far-reach-low-coverage,low-cov-with-fuzz-keyword,easy-params-far-reach,test-migration'
+  )
+
   run_full_parser.add_argument(
       '--build-timeout',
       help='Timeout for build generation per project, in seconds.',

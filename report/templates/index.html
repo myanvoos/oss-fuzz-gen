@@ -1,5 +1,5 @@
 {#
-Copyright 2024 Google LLC
+Copyright 2025 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -440,7 +440,6 @@ td .signature {
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
 
@@ -473,9 +472,9 @@ td .signature {
                         <td class="table-index">{{ loop.index }}</td>
                         <td data-sort-value="{{bug_sample.benchmark.project}}">{{bug_sample.benchmark.project}}</td>
                         <td data-sort-value="{{bug_sample.benchmark.id}}"><a href="sample/{{ bug_sample.benchmark.id|urlencode }}/{{ bug_sample.sample.id }}.html">{{bug_sample.benchmark.id}}-{{ bug_sample.sample.id }} </a> </td>
-                        <td data-sort-value="{{'True positive' if bug_sample.sample.result.is_semantic_error else 'False positive'}}">
-                            <span class="p-2 rounded-lg w-[20px] {{ 'bg-red-300 text-black' if bug_sample.sample.result.crashes and not bug_sample.sample.result.is_semantic_error else 'bg-green-300 text-white' }}">
-                                {{'True positive' if bug_sample.sample.result.is_semantic_error else 'False positive'}}
+                        <td data-sort-value="{{'False positive' if bug_sample.sample.result.is_semantic_error else 'True positive'}}">
+                            <span class="p-2 rounded-lg w-[20px] {{ 'bg-red-300' if bug_sample.sample.result.crashes and not bug_sample.sample.result.is_semantic_error else 'bg-green-300' }}">
+                                {{'False positive' if bug_sample.sample.result.is_semantic_error else 'True positive'}}
                             </span>
                         </td>
                     </tr>
