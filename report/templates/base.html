@@ -492,16 +492,23 @@ tbody tr:nth-child(odd) {
     <div class="active-filters flex flex-wrap gap-2" id="activeFilters">
         <!-- Active filters -->
     </div>
+
+    <div class="search-results" id="searchResults">
+        <div class="search-results-header">
+            <h2>Search Results</h2>
+        </div>
+        <div class="search-results-body"></div>
+    </div>
 </div>
 
-  <div class="container mx-auto mt-8">
+<div class="container mx-auto mt-8">
     {% block content %}{% endblock %}
-  </div>
+</div>
 
-  <div class="mb-20"></div>
+<div class="mb-20"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </body>
 <!-- added highlight.js for syntax highlighting -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
@@ -519,9 +526,22 @@ function prettifyBenchmarkName(name) {
     return name.replace(/^output-[^-]+-/, '');
 }
 
+function findSample(searchTerm) {
+    return [{id: '1'}, {id: '2'}, {id: '3'}];
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelectorAll('pre code.syntax-highlight').forEach((block) => {
         hljs.highlightElement(block);
+    });
+
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '';
+
+    document.getElementById('searchInput').addEventListener('input', (event) => {
+        const searchTerm = event.target.value;
+        const samples = findSample(searchTerm);
+        searchResults.innerHTML = samples.map(sample => `<div>${sample.id}</div>`).join('');
     });
 
     document.querySelectorAll('.prettify-benchmark-name').forEach(el => {
