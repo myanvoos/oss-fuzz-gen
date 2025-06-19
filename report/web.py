@@ -199,86 +199,8 @@ class GenerateReport:
       logging.error('Error reading static file %s: %s', full_file_path, e)
       return ''
 
-  def generate(self):
-    """Generate and write every report file."""
-    benchmarks = []
-    samples_with_bugs = []
-    time_results = self.read_timings()
-    for benchmark_id in self._results.list_benchmark_ids():
-      results, targets = self._results.get_results(benchmark_id)
-      benchmark = self._results.match_benchmark(benchmark_id, results, targets)
-      benchmarks.append(benchmark)
-      samples = self._results.get_samples(results, targets)
-      prompt = self._results.get_prompt(benchmark.id)
-
-      for sample in samples:
-        # If this is a local run then we need to set up coverage reports.
-        self._copy_and_set_coverage_report(benchmark, sample)
-
-      self._write_benchmark_index(benchmark, samples, prompt, time_results)
-      self._write_benchmark_crash(benchmark, samples)
-
-      for sample in samples:
-        if sample.result.crashes:
-          samples_with_bugs.append({'benchmark': benchmark, 'sample': sample})
-        sample_targets = self._results.get_targets(benchmark.id, sample.id)
-        semantic_log = self._get_semantic_analyzer_log(benchmark.id, sample.id)
-        self._write_benchmark_sample(benchmark, sample, sample_targets,
-                                     time_results, semantic_log)
-
-    accumulated_results = self._results.get_macro_insights(benchmarks)
-    projects = self._results.get_project_summary(benchmarks)
-    coverage_language_gains = self._results.get_coverage_language_gains()
-
-    self._write_index_html(benchmarks, accumulated_results, time_results,
-                           projects, samples_with_bugs, coverage_language_gains)
-    self._write_index_json(benchmarks)
-    self._write_unified_json(benchmarks, projects)
-
-  def _write(self, output_path: str, content: str):
-    """Utility write to filesystem function."""
-    full_path = os.path.join(self._output_dir, output_path)
-
-    parent_dir = os.path.dirname(full_path)
-    if not FileSystem(parent_dir).exists():
-      FileSystem(parent_dir).makedirs()
-
-    if not FileSystem(parent_dir).isdir():
-      raise Exception(
-          f'Writing to {full_path} but {parent_dir} is not a directory!')
-
-    with FileSystem(full_path).open('w', encoding='utf-8') as f:
-      f.write(content)
-
-  def _write_index_html(self, benchmarks: List[Benchmark],
-                        accumulated_results: AccumulatedResult,
-                        time_results: dict[str, Any], projects: list[Project],
-                        samples_with_bugs: list[dict[str, Any]],
-                        coverage_language_gains: dict[str, Any]):
-    """Generate the report index.html and write to filesystem."""
-    index_css_content = self._read_static_file('index/index.css')
-    index_js_content = self._read_static_file('index/index.js')
-
-    rendered = self._jinja.render(
-        'index/index.html',
-        benchmarks=benchmarks,
-        accumulated_results=accumulated_results,
-        time_results=time_results,
-        projects=projects,
-        samples_with_bugs=samples_with_bugs,
-        coverage_language_gains=coverage_language_gains,
-        index_css_content=index_css_content,
-        index_js_content=index_js_content)
-    self._write('index.html', rendered)
-
-  def _write_index_json(self, benchmarks: List[Benchmark]):
-    """Generate the report index.json and write to filesystem."""
-    rendered = self._jinja.render('index.json', benchmarks=benchmarks)
-    self._write('index.json', rendered)
-
-  def _write_unified_json(self, benchmarks: List[Benchmark],
-                          projects: list[Project]):
-    """Generate a unified JSON file with all benchmark and sample data."""
+  def _build_unified_data(self, benchmarks: List[Benchmark], projects: list[Project]) -> dict:
+    """Build the unified data structure used by all templates."""
     unified_data = {
         project.name: {
             "project":
@@ -315,13 +237,40 @@ class GenerateReport:
       }
 
       for sample in samples:
+        # Get additional data for search functionality
+        semantic_log = self._get_semantic_analyzer_log(benchmark.id, sample.id)
+        triage = self._results.get_triage(benchmark.id, sample.id) or {
+          "result": "",
+          "triager_prompt": ""
+        }
+        sample_targets = self._results.get_targets(benchmark.id, sample.id)
+        
+        # Extract source code from targets
+        source_code = ""
+        if sample_targets:
+          source_code_parts = []
+          for target in sample_targets:
+            if hasattr(target, 'code') and target.code:
+              source_code_parts.append(target.code)
+            if hasattr(target, 'build_script_code') and target.build_script_code:
+              source_code_parts.append(target.build_script_code)
+          source_code = "\n\n".join(source_code_parts)
+        
         sample_data = {
             "sample": sample.id,
             "status": sample.result.finished,
             "compiles": sample.result.compiles,
             "crashes": sample.result.crashes,
             "total_coverage": sample.result.coverage,
-            "total_line_coverage_diff": sample.result.line_coverage_diff
+            "total_line_coverage_diff": sample.result.line_coverage_diff,
+            "crash_reason": getattr(sample.result, 'semantic_error', '') or '',
+            "triage": triage.result,
+            "triager_prompt": triage.triager_prompt,
+            "source_code": source_code,
+            "sanitizer": semantic_log.get("sanitizer", ""),
+            "bug_type": semantic_log.get("error_type", ""),
+            "crash_address": semantic_log.get("crash_address", ""),
+            "crash_symptom": semantic_log.get("crash_symptom", "")
         }
         samples_data.append(sample_data)
         benchmark_metrics["total_coverage"] += int(sample.result.coverage)
@@ -380,11 +329,106 @@ class GenerateReport:
           unified_data[project_name]["average_crash_rate"] = project_crashes[
               project_name] / benchmark_count
 
+    return unified_data
+
+  def generate(self):
+    """Generate and write every report file."""
+    benchmarks = []
+    samples_with_bugs = []
+    time_results = self.read_timings()
+    
+    for benchmark_id in self._results.list_benchmark_ids():
+      results, targets = self._results.get_results(benchmark_id)
+      benchmark = self._results.match_benchmark(benchmark_id, results, targets)
+      benchmarks.append(benchmark)
+      samples = self._results.get_samples(results, targets)
+
+      for sample in samples:
+        self._copy_and_set_coverage_report(benchmark, sample)
+        if sample.result.crashes:
+          samples_with_bugs.append({'benchmark': benchmark, 'sample': sample})
+
+      self._write_benchmark_crash(benchmark, samples)
+
+    accumulated_results = self._results.get_macro_insights(benchmarks)
+    projects = self._results.get_project_summary(benchmarks)
+    coverage_language_gains = self._results.get_coverage_language_gains()
+    
+    unified_data = self._build_unified_data(benchmarks, projects)
+
+    self._write_index_html(benchmarks, accumulated_results, time_results,
+                           projects, samples_with_bugs, coverage_language_gains, unified_data)
+    
+    for benchmark_id in self._results.list_benchmark_ids():
+      results, targets = self._results.get_results(benchmark_id)
+      benchmark = self._results.match_benchmark(benchmark_id, results, targets)
+      samples = self._results.get_samples(results, targets)
+      prompt = self._results.get_prompt(benchmark.id)
+      self._write_benchmark_index(benchmark, samples, prompt, time_results, unified_data)
+
+    for benchmark_id in self._results.list_benchmark_ids():
+      results, targets = self._results.get_results(benchmark_id)
+      benchmark = self._results.match_benchmark(benchmark_id, results, targets)
+      samples = self._results.get_samples(results, targets)
+      
+      for sample in samples:
+        sample_targets = self._results.get_targets(benchmark.id, sample.id)
+        semantic_log = self._get_semantic_analyzer_log(benchmark.id, sample.id)
+        self._write_benchmark_sample(benchmark, sample, sample_targets,
+                                     time_results, semantic_log, unified_data)
+
+    self._write_index_json(benchmarks)
+    self._write_unified_json(unified_data)
+
+  def _write(self, output_path: str, content: str):
+    """Utility write to filesystem function."""
+    full_path = os.path.join(self._output_dir, output_path)
+
+    parent_dir = os.path.dirname(full_path)
+    if not FileSystem(parent_dir).exists():
+      FileSystem(parent_dir).makedirs()
+
+    if not FileSystem(parent_dir).isdir():
+      raise Exception(
+          f'Writing to {full_path} but {parent_dir} is not a directory!')
+
+    with FileSystem(full_path).open('w', encoding='utf-8') as f:
+      f.write(content)
+
+  def _write_index_html(self, benchmarks: List[Benchmark],
+                        accumulated_results: AccumulatedResult,
+                        time_results: dict[str, Any], projects: list[Project],
+                        samples_with_bugs: list[dict[str, Any]],
+                        coverage_language_gains: dict[str, Any], unified_data: dict):
+    """Generate the report index.html and write to filesystem."""
+    index_css_content = self._read_static_file('index/index.css')
+    index_js_content = self._read_static_file('index/index.js')
+
+    rendered = self._jinja.render(
+        'index/index.html',
+        benchmarks=benchmarks,
+        accumulated_results=accumulated_results,
+        time_results=time_results,
+        projects=projects,
+        samples_with_bugs=samples_with_bugs,
+        coverage_language_gains=coverage_language_gains,
+        unified_data=unified_data,
+        index_css_content=index_css_content,
+        index_js_content=index_js_content)
+    self._write('index.html', rendered)
+
+  def _write_index_json(self, benchmarks: List[Benchmark]):
+    """Generate the report index.json and write to filesystem."""
+    rendered = self._jinja.render('index.json', benchmarks=benchmarks)
+    self._write('index.json', rendered)
+
+  def _write_unified_json(self, unified_data: dict):
+    """Generate a unified JSON file with all benchmark and sample data."""
     self._write('unified_data.json', json.dumps(unified_data, indent=2))
 
   def _write_benchmark_index(self, benchmark: Benchmark, samples: List[Sample],
                              prompt: Optional[str], time_results: dict[str,
-                                                                       Any]):
+                                                                       Any], unified_data: dict):
     """Generate the benchmark index.html and write to filesystem."""
     benchmark_css_content = self._read_static_file('benchmark/benchmark.css')
     benchmark_js_content = self._read_static_file('benchmark/benchmark.js')
@@ -392,6 +436,7 @@ class GenerateReport:
     common_data = {
         'accumulated_results': self._results.get_macro_insights([benchmark]),
         'time_results': time_results,
+        'unified_data': unified_data
     }
 
     rendered = self._jinja.render('benchmark/benchmark.html',
@@ -421,7 +466,7 @@ class GenerateReport:
                               sample_targets: List[Target],
                               time_results: dict[str,
                                                  Any], semantic_log: dict[str,
-                                                                          Any]):
+                                                                          Any], unified_data: dict):
     """Generate the sample page and write to filesystem."""
     try:
       # Ensure all required variables are available
@@ -434,9 +479,11 @@ class GenerateReport:
 
       sample_css_content = self._read_static_file('sample/sample.css')
       sample_js_content = self._read_static_file('sample/sample.js')
+      
       common_data = {
           'accumulated_results': self._results.get_macro_insights([benchmark]),
           'time_results': time_results,
+          'unified_data': unified_data
       }
 
       rendered = self._jinja.render('sample/sample.html',
